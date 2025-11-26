@@ -540,7 +540,19 @@ function sendSubscription(res, user, nodes, format, userAgent, subscriptionName 
     // Название подписки в заголовке (поддерживается Clash, Hiddify, и др.)
     if (subscriptionName) {
         headers['Profile-Title'] = Buffer.from(subscriptionName).toString('base64');
-        headers['Content-Disposition'] = `attachment; filename="${subscriptionName}.txt"`;
+        
+        // Очищаем имя файла от недопустимых символов для HTTP заголовков
+        // В HTTP заголовках Content-Disposition нельзя использовать: кавычки, переносы строк, табы и др.
+        // Оставляем только безопасные символы: буквы, цифры, пробелы, дефисы, подчеркивания
+        const safeFilename = subscriptionName
+            .replace(/["\r\n\t\\/:*?<>|]/g, '') // Удаляем недопустимые символы для имени файла
+            .replace(/[^\x20-\x7E]/g, '') // Оставляем только безопасные ASCII символы (32-126)
+            .trim()
+            .substring(0, 100) || 'subscription'; // Ограничиваем длину
+        
+        // Используем RFC 5987 encoding для поддержки не-ASCII символов в современных браузерах
+        const encodedFilename = encodeURIComponent(subscriptionName.substring(0, 100));
+        headers['Content-Disposition'] = `attachment; filename="${safeFilename}.txt"; filename*=UTF-8''${encodedFilename}.txt`;
     }
     
     res.set(headers);
