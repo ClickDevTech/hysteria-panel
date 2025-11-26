@@ -146,6 +146,17 @@ app.use('/api', subscriptionRoutes);
 app.use('/api/users', requireAuth, usersRoutes);
 app.use('/api/nodes', requireAuth, nodesRoutes);
 
+// Группы API
+app.get('/api/groups', requireAuth, async (req, res) => {
+    try {
+        const ServerGroup = require('./src/models/serverGroupModel');
+        const groups = await ServerGroup.find({ active: true }).select('_id name').sort({ name: 1 });
+        res.json(groups);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Статистика
 app.get('/api/stats', requireAuth, async (req, res) => {
     try {
