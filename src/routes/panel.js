@@ -487,6 +487,31 @@ router.get('/nodes/:id/stats', requireAuth, async (req, res) => {
     }
 });
 
+// GET /panel/nodes/:id/speed - Получение текущей скорости сети
+router.get('/nodes/:id/speed', requireAuth, async (req, res) => {
+    try {
+        const NodeSSH = require('../services/nodeSSH');
+        const node = await HyNode.findById(req.params.id);
+        
+        if (!node) {
+            return res.status(404).json({ success: false, error: 'Нода не найдена' });
+        }
+        
+        if (!node.ssh?.password && !node.ssh?.privateKey) {
+            return res.status(400).json({ success: false, error: 'SSH данные не настроены' });
+        }
+        
+        const ssh = new NodeSSH(node);
+        await ssh.connect();
+        const speed = await ssh.getNetworkSpeed();
+        ssh.disconnect();
+        
+        res.json(speed);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // GET /panel/nodes/:id/get-config - Получение текущего конфига с ноды
 router.get('/nodes/:id/get-config', requireAuth, async (req, res) => {
     try {

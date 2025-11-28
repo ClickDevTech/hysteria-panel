@@ -294,6 +294,55 @@ class NodeSSH {
     }
     
     /**
+     * Получает текущую скорость сети (байт/сек)
+     */
+    async getNetworkSpeed() {
+        try {
+            // Читаем /proc/net/dev дважды с интервалом 1 сек
+            const getNetStats = async () => {
+                const result = await this.exec(`cat /proc/net/dev | grep -E '(eth|ens|enp)' | head -1`);
+                const line = result.stdout.trim();
+                
+                if (!line) return null;
+                
+                // Формат: interface: rx_bytes rx_packets ... tx_bytes tx_packets ...
+                const parts = line.split(/\s+/);
+                const rxBytes = parseInt(parts[1]) || 0;
+                const txBytes = parseInt(parts[9]) || 0;
+                
+                return { rx: rxBytes, tx: txBytes, time: Date.now() };
+            };
+            
+            const stats1 = await getNetStats();
+            if (!stats1) {
+                return { success: false, error: 'Network interface not found' };
+            }
+            
+            // Ждем 1 секунду
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const stats2 = await getNetStats();
+            if (!stats2) {
+                return { success: false, error: 'Network interface not found' };
+            }
+            
+            // Вычисляем скорость (байт/сек)
+            const timeDiff = (stats2.time - stats1.time) / 1000; // секунды
+            const rxSpeed = Math.round((stats2.rx - stats1.rx) / timeDiff);
+            const txSpeed = Math.round((stats2.tx - stats1.tx) / timeDiff);
+            
+            return { 
+                success: true, 
+                rx: rxSpeed,  // байт/сек (download)
+                tx: txSpeed,  // байт/сек (upload)
+            };
+        } catch (error) {
+            logger.error(`[SSH] Ошибка получения скорости сети ${this.node.name}: ${error.message}`);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
      * Получает системную статистику ноды
      */
     async getSystemStats() {

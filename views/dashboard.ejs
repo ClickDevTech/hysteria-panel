@@ -56,7 +56,7 @@
                     <th>Статус</th>
                     <th>Онлайн</th>
                             <th>Загрузка</th>
-                            <th>Трафик</th>
+                            <th>Скорость</th>
                             <th>Действия</th>
                 </tr>
             </thead>
@@ -86,15 +86,8 @@
                             <td class="node-load" data-nodeid="<%= node._id %>">
                                 <span class="load-placeholder">—</span>
                             </td>
-                            <td class="node-traffic">
-                                <% 
-                                const nodeTx = (node.traffic?.tx || 0) / (1024 * 1024 * 1024);
-                                const nodeRx = (node.traffic?.rx || 0) / (1024 * 1024 * 1024);
-                                const nodeTotal = nodeTx + nodeRx;
-                                %>
-                                <span style="font-size: 13px;" title="↑ <%= nodeTx.toFixed(2) %> GB / ↓ <%= nodeRx.toFixed(2) %> GB">
-                                    <%= nodeTotal.toFixed(1) %> GB
-                                </span>
+                            <td class="node-speed" data-nodeid="<%= node._id %>">
+                                <span class="load-placeholder">—</span>
                             </td>
                             <td>
                                 <div class="node-actions">
@@ -215,6 +208,19 @@
 .node-load .cpu, .node-load .mem {
     display: block;
 }
+.node-speed {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+.node-speed .speed-up, .node-speed .speed-down {
+    display: block;
+}
+.node-speed .speed-up {
+    color: #22c55e;
+}
+.node-speed .speed-down {
+    color: #3b82f6;
+}
 .load-placeholder {
     color: var(--muted);
 }
@@ -226,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshLogs();
     loadSystemStats();
     loadNodesStats();
+    loadNodesSpeed();
 });
 
 async function refreshLogs() {
@@ -318,6 +325,45 @@ async function loadNodesStats() {
             }
         } catch (e) {
             loadCell.innerHTML = '<span class="load-placeholder">—</span>';
+        }
+    }
+}
+
+async function loadNodesSpeed() {
+    const nodeRows = document.querySelectorAll('.node-row');
+    
+    for (const row of nodeRows) {
+        const nodeId = row.dataset.nodeid;
+        const speedCell = row.querySelector('.node-speed');
+        
+        // Показываем индикатор загрузки
+        speedCell.innerHTML = '<span class="load-placeholder">⏳</span>';
+        
+        try {
+            const res = await fetch(`/panel/nodes/${nodeId}/speed`, { credentials: 'include' });
+            const data = await res.json();
+            
+            if (data.success) {
+                // Форматируем скорость
+                const formatSpeed = (bytes) => {
+                    if (bytes < 1024) return `${bytes} B/s`;
+                    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB/s`;
+                    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB/s`;
+                    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB/s`;
+                };
+                
+                const txSpeed = formatSpeed(data.tx);
+                const rxSpeed = formatSpeed(data.rx);
+                
+                speedCell.innerHTML = `
+                    <span class="speed-up" title="Upload">↑ ${txSpeed}</span>
+                    <span class="speed-down" title="Download">↓ ${rxSpeed}</span>
+                `;
+            } else {
+                speedCell.innerHTML = '<span class="load-placeholder">N/A</span>';
+            }
+        } catch (e) {
+            speedCell.innerHTML = '<span class="load-placeholder">—</span>';
         }
     }
 }
