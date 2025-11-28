@@ -1575,6 +1575,12 @@ html {
     display: none;
 }
 
+/* Mobile Cards - скрыты по умолчанию (показываются только на мобилке) */
+.mobile-nodes-list,
+.mobile-users-list {
+    display: none;
+}
+
 /* Mobile Menu Button */
 .mobile-menu-btn {
     display: none;
@@ -1610,6 +1616,17 @@ html {
 }
 
 @media (max-width: 768px) {
+    /* Скрываем desktop таблицы */
+    .table-wrapper {
+        display: none !important;
+    }
+    
+    /* Показываем мобильные карточки */
+    .mobile-nodes-list,
+    .mobile-users-list {
+        display: flex !important;
+    }
+    
     /* Mobile Header */
     .mobile-header {
         display: flex;
@@ -1769,17 +1786,13 @@ html {
         display: none;
     }
     
-    /* Mobile Cards общие */
+    /* Mobile Cards - показываем только на мобилке */
     .mobile-nodes-list,
     .mobile-users-list {
         display: flex;
         flex-direction: column;
         gap: 12px;
         padding: 16px;
-    }
-    
-    .mobile-users-list {
-        display: none; /* Покажется только на мобилке */
     }
     
     .mobile-node-card,
@@ -1852,36 +1865,6 @@ html {
         border-top: 1px solid var(--border);
     }
     
-    /* Desktop tables - показываем */
-    @media (min-width: 769px) {
-        .mobile-nodes-list,
-        .mobile-users-list {
-            display: none;
-        }
-        
-        .table-wrapper {
-            display: block;
-        }
-    }
-    
-    /* Users table адаптация */
-    .users-table-card .table-wrapper {
-        display: none;
-    }
-    
-    .mobile-users-list {
-        display: flex;
-    }
-    
-    @media (min-width: 769px) {
-        .users-table-card .table-wrapper {
-            display: block;
-        }
-        
-        .users-table-card .mobile-users-list {
-            display: none;
-        }
-    }
     
     /* Logs Container Mobile */
     .logs-container {
