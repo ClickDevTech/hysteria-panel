@@ -300,15 +300,23 @@ class NodeSSH {
         try {
             // Читаем /proc/net/dev дважды с интервалом 1 сек
             const getNetStats = async () => {
-                const result = await this.exec(`cat /proc/net/dev | grep -E '(eth|ens|enp)' | head -1`);
+                const result = await this.exec(`cat /proc/net/dev | grep -E '(eth|ens|enp|eno)' | head -1`);
                 const line = result.stdout.trim();
                 
                 if (!line) return null;
                 
-                // Формат: interface: rx_bytes rx_packets ... tx_bytes tx_packets ...
-                const parts = line.split(/\s+/);
-                const rxBytes = parseInt(parts[1]) || 0;
-                const txBytes = parseInt(parts[9]) || 0;
+                // Формат /proc/net/dev:
+                // eth0: 12345678 123 0 0 0 0 0 0 87654321 123 0 0 0 0 0 0
+                //       RX bytes                    TX bytes
+                
+                // Убираем название интерфейса и двоеточие
+                const data = line.replace(/^[^:]+:\s*/, '');
+                const parts = data.trim().split(/\s+/);
+                
+                // RX: bytes (0), packets (1), errs (2)...
+                // TX: bytes (8), packets (9), errs (10)...
+                const rxBytes = parseInt(parts[0]) || 0;
+                const txBytes = parseInt(parts[8]) || 0;
                 
                 return { rx: rxBytes, tx: txBytes, time: Date.now() };
             };

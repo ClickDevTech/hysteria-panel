@@ -344,12 +344,13 @@ async function loadNodesSpeed() {
             const data = await res.json();
             
             if (data.success) {
-                // Форматируем скорость
+                // Форматируем скорость в биты (умножаем байты на 8)
                 const formatSpeed = (bytes) => {
-                    if (bytes < 1024) return `${bytes} B/s`;
-                    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB/s`;
-                    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB/s`;
-                    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB/s`;
+                    const bits = bytes * 8;
+                    if (bits < 1000) return `${bits.toFixed(0)} bit/s`;
+                    if (bits < 1000 * 1000) return `${(bits / 1000).toFixed(1)} Kbit/s`;
+                    if (bits < 1000 * 1000 * 1000) return `${(bits / 1000 / 1000).toFixed(1)} Mbit/s`;
+                    return `${(bits / 1000 / 1000 / 1000).toFixed(2)} Gbit/s`;
                 };
                 
                 const txSpeed = formatSpeed(data.tx);
