@@ -247,31 +247,40 @@ router.get('/logout', (req, res) => {
 // GET /panel - Dashboard
 router.get('/', requireAuth, async (req, res) => {
     try {
-        // Получаем статистику трафика из кэша
-        let trafficStats = await cache.getTrafficStats();
+        // Получаем счётчики из кэша
+        let counts = await cache.getDashboardCounts();
         
-        if (!trafficStats) {
-            // Если кэша нет — считаем aggregate
-            const trafficAgg = await HyUser.aggregate([
-                { $group: { 
-                    _id: null, 
-                    tx: { $sum: '$traffic.tx' }, 
-                    rx: { $sum: '$traffic.rx' } 
-                }}
+        if (!counts) {
+            // Если кэша нет — запрашиваем из БД
+            const [trafficAgg, usersTotal, usersEnabled, nodesTotal, nodesOnline] = await Promise.all([
+                HyUser.aggregate([
+                    { $group: { 
+                        _id: null, 
+                        tx: { $sum: '$traffic.tx' }, 
+                        rx: { $sum: '$traffic.rx' } 
+                    }}
+                ]),
+                HyUser.countDocuments(),
+                HyUser.countDocuments({ enabled: true }),
+                HyNode.countDocuments(),
+                HyNode.countDocuments({ status: 'online' }),
             ]);
             
-            trafficStats = trafficAgg[0] || { tx: 0, rx: 0 };
+            const trafficStats = trafficAgg[0] || { tx: 0, rx: 0 };
             
-            // Сохраняем в кэш на 5 минут
-            await cache.setTrafficStats(trafficStats);
+            counts = {
+                usersTotal,
+                usersEnabled,
+                nodesTotal,
+                nodesOnline,
+                trafficStats,
+            };
+            
+            // Сохраняем в кэш на 1 минуту
+            await cache.setDashboardCounts(counts);
         }
         
-        const [usersTotal, usersEnabled, nodesTotal, nodesOnline] = await Promise.all([
-            HyUser.countDocuments(),
-            HyUser.countDocuments({ enabled: true }),
-            HyNode.countDocuments(),
-            HyNode.countDocuments({ status: 'online' }),
-        ]);
+        const { usersTotal, usersEnabled, nodesTotal, nodesOnline, trafficStats } = counts;
         
         const nodes = await HyNode.find({ active: true })
             .select('name ip status onlineUsers groups traffic')

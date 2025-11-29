@@ -22,6 +22,7 @@ const DEFAULT_TTL = {
     SETTINGS: 60,            // 1 минута (фиксированный)
     TRAFFIC_STATS: 300,      // 5 минут
     GROUPS: 300,             // 5 минут
+    DASHBOARD_COUNTS: 60,    // 1 минута
 };
 
 // Префиксы ключей
@@ -34,6 +35,7 @@ const PREFIX = {
     SETTINGS: 'settings',    // settings
     TRAFFIC_STATS: 'traffic:stats', // Общая статистика трафика
     GROUPS: 'groups:active', // Активные группы
+    DASHBOARD_COUNTS: 'dashboard:counts', // Счётчики для дашборда
 };
 
 class CacheService {
@@ -60,6 +62,7 @@ class CacheService {
             SETTINGS: DEFAULT_TTL.SETTINGS, // Всегда фиксированный
             TRAFFIC_STATS: DEFAULT_TTL.TRAFFIC_STATS, // Всегда фиксированный
             GROUPS: DEFAULT_TTL.GROUPS, // Всегда фиксированный
+            DASHBOARD_COUNTS: DEFAULT_TTL.DASHBOARD_COUNTS, // Всегда фиксированный
         };
         logger.info(`[Cache] TTL обновлены: sub=${this.ttl.SUBSCRIPTION}s, user=${this.ttl.USER}s`);
     }
@@ -544,6 +547,55 @@ class CacheService {
             logger.debug('[Cache] INVALIDATE groups');
         } catch (err) {
             logger.error(`[Cache] Ошибка invalidateGroups: ${err.message}`);
+        }
+    }
+
+    // ==================== СЧЁТЧИКИ ДАШБОРДА ====================
+
+    /**
+     * Получить счётчики для дашборда
+     */
+    async getDashboardCounts() {
+        if (!this.isConnected()) return null;
+        
+        try {
+            const data = await this.redis.get(PREFIX.DASHBOARD_COUNTS);
+            if (data) {
+                logger.debug('[Cache] HIT dashboard counts');
+                return JSON.parse(data);
+            }
+            return null;
+        } catch (err) {
+            logger.error(`[Cache] Ошибка getDashboardCounts: ${err.message}`);
+            return null;
+        }
+    }
+
+    /**
+     * Сохранить счётчики для дашборда
+     */
+    async setDashboardCounts(counts) {
+        if (!this.isConnected()) return;
+        
+        try {
+            await this.redis.setex(PREFIX.DASHBOARD_COUNTS, this.ttl.DASHBOARD_COUNTS, JSON.stringify(counts));
+            logger.debug('[Cache] SET dashboard counts');
+        } catch (err) {
+            logger.error(`[Cache] Ошибка setDashboardCounts: ${err.message}`);
+        }
+    }
+
+    /**
+     * Инвалидировать счётчики дашборда
+     */
+    async invalidateDashboardCounts() {
+        if (!this.isConnected()) return;
+        
+        try {
+            await this.redis.del(PREFIX.DASHBOARD_COUNTS);
+            logger.debug('[Cache] INVALIDATE dashboard counts');
+        } catch (err) {
+            logger.error(`[Cache] Ошибка invalidateDashboardCounts: ${err.message}`);
         }
     }
 

@@ -12,6 +12,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const compression = require('compression');
 const cron = require('node-cron');
 const session = require('express-session');
 const path = require('path');
@@ -38,6 +39,18 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ==================== MIDDLEWARE ====================
+
+// Compression (gzip/brotli) для всех ответов
+app.use(compression({
+    filter: (req, res) => {
+        // Не сжимаем если клиент не хочет
+        if (req.headers['x-no-compression']) {
+            return false;
+        }
+        return compression.filter(req, res);
+    },
+    level: 6, // Баланс между скоростью и степенью сжатия
+}));
 
 // CORS: ограничиваем только на свой домен
 app.use(cors({
@@ -476,11 +489,65 @@ function setupCronJobs() {
         await syncService.healthCheck();
     });
     
+    // Очистка старых логов каждый день в 3:00
+    cron.schedule('0 3 * * *', () => {
+        logger.info('[Cron] Очистка старых логов');
+        cleanOldLogs(30); // Удаляем логи старше 30 дней
+    });
+    
     // Первоначальный health check через 5 секунд
     setTimeout(async () => {
         logger.info('[Startup] Проверка статуса нод');
         await syncService.healthCheck();
     }, 5000);
+}
+
+/**
+ * Очистка логов старше N дней
+ */
+function cleanOldLogs(days) {
+    try {
+        const logsDir = path.join(__dirname, 'logs');
+        
+        if (!fs.existsSync(logsDir)) {
+            return;
+        }
+        
+        const files = fs.readdirSync(logsDir);
+        const now = Date.now();
+        const maxAge = days * 24 * 60 * 60 * 1000;
+        
+        // Список активных файлов Winston (не трогаем)
+        const activeFiles = ['error.log', 'combined.log'];
+        for (let i = 1; i <= 5; i++) {
+            activeFiles.push(`combined${i}.log`);
+        }
+        
+        let deleted = 0;
+        
+        files.forEach(file => {
+            // Пропускаем активные файлы Winston
+            if (activeFiles.includes(file)) {
+                return;
+            }
+            
+            // Проверяем возраст файла
+            const filePath = path.join(logsDir, file);
+            const stats = fs.statSync(filePath);
+            
+            if (now - stats.mtime.getTime() > maxAge) {
+                fs.unlinkSync(filePath);
+                deleted++;
+                logger.info(`[Cleanup] Удалён старый лог: ${file}`);
+            }
+        });
+        
+        if (deleted > 0) {
+            logger.info(`[Cleanup] Очищено ${deleted} старых файлов логов`);
+        }
+    } catch (err) {
+        logger.error(`[Cleanup] Ошибка очистки логов: ${err.message}`);
+    }
 }
 
 // Graceful shutdown

@@ -22,6 +22,8 @@ async function invalidateUserCache(userId, subscriptionToken) {
     }
     // Очищаем устройства пользователя
     await cache.clearDeviceIPs(userId);
+    // Инвалидируем счётчики дашборда
+    await cache.invalidateDashboardCounts();
 }
 
 /**

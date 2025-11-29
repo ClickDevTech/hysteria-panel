@@ -34,14 +34,16 @@ function isBrowser(req) {
 }
 
 async function getUserByToken(token) {
-    let user = await HyUser.findOne({ subscriptionToken: token })
+    // Один запрос вместо двух (оптимизация)
+    const user = await HyUser.findOne({
+        $or: [
+            { subscriptionToken: token },
+            { userId: token }
+        ]
+    })
         .populate('nodes')
         .populate('groups');
-    if (!user) {
-        user = await HyUser.findOne({ userId: token })
-            .populate('nodes')
-            .populate('groups');
-    }
+    
     return user;
 }
 

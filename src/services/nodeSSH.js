@@ -370,7 +370,7 @@ echo "Port hopping: ${startPort}-${endPort} -> ${mainPort}"
             return { success: false, error: error.message };
         }
     }
-
+    
     /**
      * Получает системную статистику ноды
      */

@@ -17,6 +17,7 @@ const logger = require('../utils/logger');
 async function invalidateNodesCache() {
     await cache.invalidateNodes();
     await cache.invalidateAllSubscriptions();
+    await cache.invalidateDashboardCounts();
 }
 
 /**
