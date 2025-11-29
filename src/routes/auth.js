@@ -217,7 +217,7 @@ router.post('/', async (req, res) => {
             }
         }
         
-        logger.info(`[Auth] ✅ Авторизован: ${userId} (${addr})`);
+        logger.debug(`[Auth] ✅ Авторизован: ${userId} (${addr})`);
         
         // Успешная авторизация
         // Bandwidth ограничивается на стороне КЛИЕНТА (в подписке)

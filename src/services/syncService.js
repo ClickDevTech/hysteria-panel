@@ -266,14 +266,21 @@ class SyncService {
     }
 
     /**
-     * Собирает статистику со всех нод
+     * Собирает статистику со всех нод (параллельно с ограничением concurrency)
      */
     async collectAllStats() {
         const nodes = await HyNode.find({ active: true });
         
-        for (const node of nodes) {
-            await this.collectTrafficStats(node);
-            await this.getOnlineUsers(node);
+        // Параллельная обработка с ограничением concurrency
+        const CONCURRENCY = 5;
+        for (let i = 0; i < nodes.length; i += CONCURRENCY) {
+            const batch = nodes.slice(i, i + CONCURRENCY);
+            await Promise.allSettled(
+                batch.flatMap(node => [
+                    this.collectTrafficStats(node),
+                    this.getOnlineUsers(node)
+                ])
+            );
         }
         
         // Обновляем время последнего сбора статистики
@@ -284,13 +291,18 @@ class SyncService {
     }
 
     /**
-     * Проверяет здоровье всех нод
+     * Проверяет здоровье всех нод (параллельно)
      */
     async healthCheck() {
         const nodes = await HyNode.find({ active: true });
         
-        for (const node of nodes) {
-            await this.getOnlineUsers(node);
+        // Параллельная проверка с ограничением concurrency
+        const CONCURRENCY = 5;
+        for (let i = 0; i < nodes.length; i += CONCURRENCY) {
+            const batch = nodes.slice(i, i + CONCURRENCY);
+            await Promise.allSettled(
+                batch.map(node => this.getOnlineUsers(node))
+            );
         }
     }
 

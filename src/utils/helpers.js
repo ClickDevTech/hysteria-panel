@@ -6,29 +6,29 @@ const Settings = require('../models/settingsModel');
 const ServerGroup = require('../models/serverGroupModel');
 const cache = require('../services/cacheService');
 
-// Кэш настроек (обновляется раз в 30 сек)
-let settingsCache = null;
-let settingsCacheTime = 0;
-const CACHE_TTL = 30 * 1000; // 30 секунд
-
 /**
- * Получить настройки (с кэшированием)
+ * Получить настройки (с кэшированием через Redis)
+ * Единый источник кэша - Redis, без дублирования в памяти
  */
 async function getSettings() {
-    const now = Date.now();
-    if (!settingsCache || now - settingsCacheTime > CACHE_TTL) {
-        settingsCache = await Settings.get();
-        settingsCacheTime = now;
-    }
-    return settingsCache;
+    // Сначала проверяем Redis кэш
+    const cached = await cache.getSettings();
+    if (cached) return cached;
+    
+    // Если кэша нет — запрашиваем из MongoDB
+    const settings = await Settings.get();
+    
+    // Сохраняем в Redis (lean объект)
+    await cache.setSettings(settings.toObject ? settings.toObject() : settings);
+    
+    return settings;
 }
 
 /**
  * Сбросить кэш настроек (вызывать после изменения)
  */
-function invalidateSettingsCache() {
-    settingsCache = null;
-    settingsCacheTime = 0;
+async function invalidateSettingsCache() {
+    await cache.invalidateSettings();
 }
 
 /**

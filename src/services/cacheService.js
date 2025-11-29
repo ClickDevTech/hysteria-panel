@@ -149,16 +149,18 @@ class CacheService {
 
     /**
      * Инвалидировать подписку (все форматы)
+     * Использует SCAN вместо KEYS для неблокирующей работы
      */
     async invalidateSubscription(token) {
         if (!this.isConnected()) return;
         
         try {
             const pattern = `${PREFIX.SUB}${token}:*`;
-            const keys = await this.redis.keys(pattern);
-            if (keys.length > 0) {
-                await this.redis.del(...keys);
-                logger.debug(`[Cache] INVALIDATE subscription: ${token} (${keys.length} keys)`);
+            const keysToDelete = await this._scanKeys(pattern);
+            
+            if (keysToDelete.length > 0) {
+                await this.redis.unlink(...keysToDelete);
+                logger.debug(`[Cache] INVALIDATE subscription: ${token} (${keysToDelete.length} keys)`);
             }
         } catch (err) {
             logger.error(`[Cache] Ошибка invalidateSubscription: ${err.message}`);
@@ -167,20 +169,45 @@ class CacheService {
 
     /**
      * Инвалидировать все подписки (при изменении нод)
+     * Использует SCAN вместо KEYS для неблокирующей работы
      */
     async invalidateAllSubscriptions() {
         if (!this.isConnected()) return;
         
         try {
             const pattern = `${PREFIX.SUB}*`;
-            const keys = await this.redis.keys(pattern);
-            if (keys.length > 0) {
-                await this.redis.del(...keys);
-                logger.info(`[Cache] INVALIDATE all subscriptions (${keys.length} keys)`);
+            const keysToDelete = await this._scanKeys(pattern);
+            
+            if (keysToDelete.length > 0) {
+                // Удаляем батчами по 100 ключей для избежания блокировки
+                const BATCH_SIZE = 100;
+                for (let i = 0; i < keysToDelete.length; i += BATCH_SIZE) {
+                    const batch = keysToDelete.slice(i, i + BATCH_SIZE);
+                    await this.redis.unlink(...batch);
+                }
+                logger.info(`[Cache] INVALIDATE all subscriptions (${keysToDelete.length} keys)`);
             }
         } catch (err) {
             logger.error(`[Cache] Ошибка invalidateAllSubscriptions: ${err.message}`);
         }
+    }
+    
+    /**
+     * Неблокирующий поиск ключей через SCAN
+     * @param {string} pattern - паттерн для поиска
+     * @returns {Promise<string[]>} - массив найденных ключей
+     */
+    async _scanKeys(pattern) {
+        const keys = [];
+        let cursor = '0';
+        
+        do {
+            const [newCursor, foundKeys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+            cursor = newCursor;
+            keys.push(...foundKeys);
+        } while (cursor !== '0');
+        
+        return keys;
     }
 
     // ==================== ПОЛЬЗОВАТЕЛИ ====================

@@ -41,6 +41,9 @@ const execAsync = promisify(exec);
 const ejs = require('ejs');
 const os = require('os');
 
+// Кэш скомпилированных шаблонов (для production)
+const templateCache = new Map();
+
 // Rate limiter для защиты от brute-force
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 минут
@@ -131,12 +134,24 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Хелпер для рендера с layout
+// Хелпер для рендера с layout (с кэшированием шаблонов)
 const render = (res, template, data = {}) => {
-    // Рендерим контент
-    const templatePath = path.join(__dirname, '../../views', template + '.ejs');
-    const templateContent = fs.readFileSync(templatePath, 'utf8');
-    const content = ejs.render(templateContent, { 
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Получаем или компилируем шаблон
+    let compiledTemplate = templateCache.get(template);
+    
+    if (!compiledTemplate || !isProduction) {
+        const templatePath = path.join(__dirname, '../../views', template + '.ejs');
+        const templateContent = fs.readFileSync(templatePath, 'utf8');
+        compiledTemplate = ejs.compile(templateContent, { filename: templatePath });
+        if (isProduction) {
+            templateCache.set(template, compiledTemplate);
+        }
+    }
+    
+    // Рендерим контент из кэшированного шаблона
+    const content = compiledTemplate({ 
         ...data, 
         baseUrl: config.BASE_URL, 
         config 
@@ -874,7 +889,7 @@ router.post('/settings', requireAuth, async (req, res) => {
         await Settings.update(updates);
         
         // Сбрасываем кэш настроек и перезагружаем в память
-        invalidateSettingsCache();
+        await invalidateSettingsCache();
         await reloadSettings();
         
         logger.info(`[Panel] Настройки обновлены`);

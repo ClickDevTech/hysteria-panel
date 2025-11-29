@@ -120,10 +120,10 @@ async function getActiveNodes(user) {
         }
     }
     
-    // Логируем статусы нод
+    // Логируем статусы нод (debug уровень для снижения нагрузки)
     if (nodes.length > 0) {
         const statuses = nodes.map(n => `${n.name}:${n.status}(${n.onlineUsers}/${n.maxOnlineUsers || '∞'})`).join(', ');
-        logger.info(`[Sub] Nodes for ${user.userId}: ${statuses}`);
+        logger.debug(`[Sub] Nodes for ${user.userId}: ${statuses}`);
     } else {
         logger.warn(`[Sub] NO NODES for user ${user.userId}! Check: active=true, groups match`);
     }
@@ -514,7 +514,7 @@ router.get('/files/:token', async (req, res) => {
         }
         
         // Кэша нет — генерируем
-        logger.info(`[Sub] Request: token=${token.substring(0,8)}..., format=${format}`);
+        logger.debug(`[Sub] Cache MISS: token=${token.substring(0,8)}..., format=${format}`);
         
         const user = await getUserByToken(token);
         
@@ -536,7 +536,7 @@ router.get('/files/:token', async (req, res) => {
             return res.status(503).type('text/plain').send('# No servers available');
         }
         
-        logger.info(`[Sub] Serving ${nodes.length} nodes to user ${user.userId}`);
+        logger.debug(`[Sub] Serving ${nodes.length} nodes to user ${user.userId}`);
         
         // Генерируем подписку
         const subscriptionData = generateSubscriptionData(user, nodes, format, userAgent);

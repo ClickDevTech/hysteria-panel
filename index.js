@@ -15,6 +15,7 @@ const cors = require('cors');
 const compression = require('compression');
 const cron = require('node-cron');
 const session = require('express-session');
+const RedisStore = require('connect-redis').default;
 const path = require('path');
 const fs = require('fs');
 const { WebSocketServer } = require('ws');
@@ -60,16 +61,34 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Сессии для панели (secure cookies для HTTPS)
-app.use(session({
-    secret: config.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 часа
+// Сессии для панели (Redis store + secure cookies для HTTPS)
+// RedisStore инициализируется после подключения к Redis в startServer()
+let sessionMiddleware = null;
+
+function initSessionMiddleware() {
+    sessionMiddleware = session({
+        store: new RedisStore({ 
+            client: cacheService.redis,
+            prefix: 'sess:',
+        }),
+        secret: config.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: { 
+            secure: true,
+            maxAge: 24 * 60 * 60 * 1000 // 24 часа
+        }
+    });
+}
+
+// Middleware-обёртка для отложенной инициализации сессий
+app.use((req, res, next) => {
+    if (sessionMiddleware) {
+        return sessionMiddleware(req, res, next);
     }
-}));
+    // Fallback если Redis ещё не подключен
+    next();
+});
 
 // Интернационализация (i18n)
 app.use(i18nMiddleware);
@@ -81,10 +100,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Логирование запросов (кроме статики)
+// Логирование запросов (debug уровень, кроме статики и частых API)
 app.use((req, res, next) => {
-    if (!req.path.startsWith('/css') && !req.path.startsWith('/js')) {
-        logger.info(`${req.method} ${req.path}`);
+    // Пропускаем статику и высокочастотные эндпоинты
+    const skipPaths = ['/css', '/js', '/api/auth', '/api/files', '/health'];
+    const shouldSkip = skipPaths.some(p => req.path.startsWith(p));
+    
+    if (!shouldSkip) {
+        logger.debug(`${req.method} ${req.path}`);
     }
     next();
 });
@@ -298,12 +321,21 @@ app.use((err, req, res, next) => {
 
 async function startServer() {
     try {
-        // Подключение к MongoDB
-        await mongoose.connect(config.MONGO_URI);
+        // Подключение к MongoDB с оптимизированным пулом соединений
+        await mongoose.connect(config.MONGO_URI, {
+            maxPoolSize: 10,              // Максимум соединений в пуле
+            minPoolSize: 2,               // Минимум соединений
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
         logger.info('✅ Подключено к MongoDB');
         
         // Подключение к Redis
         await cacheService.connect();
+        
+        // Инициализируем Redis session store после подключения к Redis
+        initSessionMiddleware();
+        logger.info('✅ Redis session store инициализирован');
         
         // Загрузка настроек (TTL кэша, rate limits)
         await reloadSettings();
