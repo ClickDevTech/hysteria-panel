@@ -1,14 +1,14 @@
 <div class="page-header">
-    <a href="/panel/users" class="btn btn-back">← Назад к списку</a>
+    <a href="/panel/users" class="btn btn-back"><%= t('common.backToList') %></a>
 </div>
 
 <div class="row">
     <div class="col-8">
         <div class="card">
             <div class="card-header">
-                <h2>Пользователь <%= user.userId %></h2>
+                <h2><%= t('users.user') %> <%= user.userId %></h2>
                 <span class="badge badge-<%= user.enabled ? 'success' : 'secondary' %> badge-lg">
-                    <%= user.enabled ? 'Активен' : 'Неактивен' %>
+                    <%= user.enabled ? t('common.active') : t('common.inactive') %>
                 </span>
             </div>
             <div class="card-body">
@@ -22,12 +22,12 @@
                         <span class="value"><%= user.username || '—' %></span>
                     </div>
                     <div class="detail-item">
-                        <label>Пароль Hysteria</label>
+                        <label><%= t('users.hysteriaPassword') %></label>
                         <code class="value"><%= user.password %></code>
                     </div>
                 </div>
                 
-                <h3 class="section-title">Группы</h3>
+                <h3 class="section-title"><%= t('users.groups') %></h3>
                 <div class="groups-list">
                     <% if (user.groups && user.groups.length > 0) { %>
                         <% user.groups.forEach(group => { %>
@@ -36,29 +36,28 @@
                             </span>
                         <% }); %>
                     <% } else { %>
-                        <span class="text-muted">Нет групп (доступ ко всем нодам без групп)</span>
+                        <span class="text-muted"><%= t('users.noGroupsAccess') %></span>
                     <% } %>
                 </div>
                 
-                <h3 class="section-title">Лимиты</h3>
+                <h3 class="section-title"><%= t('users.limits') %></h3>
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <label>Трафик</label>
+                        <label><%= t('users.traffic') %></label>
                         <% const used = ((user.traffic?.tx || 0) + (user.traffic?.rx || 0)) / (1024*1024*1024); %>
                         <% const limit = user.trafficLimit ? user.trafficLimit / (1024*1024*1024) : 0; %>
                         <span class="value"><%= used.toFixed(2) %> / <%= limit > 0 ? limit.toFixed(0) + ' GB' : '∞' %></span>
                     </div>
                     <div class="detail-item">
-                        <label>Устройства</label>
+                        <label><%= t('users.devices') %></label>
                         <% 
                             let deviceLimit = user.maxDevices;
                             let deviceLimitStr = '∞';
                             if (deviceLimit === 0) {
-                                // Берём из групп
                                 const groupLimits = (user.groups || []).filter(g => g.maxDevices > 0).map(g => g.maxDevices);
                                 if (groupLimits.length > 0) {
                                     deviceLimit = Math.min(...groupLimits);
-                                    deviceLimitStr = deviceLimit + ' (группа)';
+                                    deviceLimitStr = deviceLimit + ' ' + t('users.deviceFromGroup');
                                 }
                             } else if (deviceLimit > 0) {
                                 deviceLimitStr = deviceLimit.toString();
@@ -67,19 +66,19 @@
                         <span class="value"><%= deviceLimitStr %></span>
                     </div>
                     <div class="detail-item">
-                        <label>TX / RX</label>
+                        <label><%= t('users.txRx') %></label>
                         <span class="value">
                             ↑ <%= ((user.traffic?.tx || 0) / (1024*1024*1024)).toFixed(2) %> / 
                             ↓ <%= ((user.traffic?.rx || 0) / (1024*1024*1024)).toFixed(2) %> GB
                         </span>
                     </div>
                     <div class="detail-item">
-                        <label>Истекает</label>
-                        <span class="value"><%= user.expireAt ? new Date(user.expireAt).toLocaleDateString('ru') : 'Бессрочно' %></span>
+                        <label><%= t('users.expires') %></label>
+                        <span class="value"><%= user.expireAt ? new Date(user.expireAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'ru-RU') : t('users.forever') %></span>
                     </div>
                 </div>
                 
-                <h3 class="section-title">Доступные ноды (<%= user.nodes?.length || 0 %>)</h3>
+                <h3 class="section-title"><%= t('users.availableNodes') %> (<%= user.nodes?.length || 0 %>)</h3>
                 <div class="nodes-list">
                     <% if (user.nodes && user.nodes.length > 0) { %>
                         <% user.nodes.forEach(node => { %>
@@ -89,7 +88,7 @@
                         </div>
                         <% }); %>
                     <% } else { %>
-                        <span class="text-muted">Нет нод</span>
+                        <span class="text-muted"><%= t('users.noNodes') %></span>
                     <% } %>
                 </div>
             </div>
@@ -99,33 +98,33 @@
     <div class="col-4">
         <div class="card">
             <div class="card-header">
-                <h2>Действия</h2>
+                <h2><%= t('common.actions') %></h2>
             </div>
             <div class="card-body">
                 <div class="actions-list">
                     <% if (user.enabled) { %>
                     <button class="btn btn-warning btn-block" onclick="toggleUser(false)">
-                        Отключить пользователя
+                        <%= t('users.disableUser') %>
                     </button>
                     <% } else { %>
                     <button class="btn btn-success btn-block" onclick="toggleUser(true)">
-                        Включить пользователя
+                        <%= t('users.enableUser') %>
                     </button>
                     <% } %>
                     
                     <button class="btn btn-block" onclick="copySubscription()">
-                        📋 Копировать подписку
+                        📋 <%= t('users.copySubscription') %>
                     </button>
                     
                     <a href="<%= baseUrl %>/api/files/<%= user.subscriptionToken || user.userId %>" 
                        target="_blank" class="btn btn-block">
-                        🔗 Открыть подписку
+                        <%= t('users.openSubscription') %>
                     </a>
                     
                     <hr>
                     
                     <button class="btn btn-danger btn-block" onclick="deleteUser()">
-                        Удалить пользователя
+                        <%= t('users.deleteUser') %>
                     </button>
                 </div>
             </div>
@@ -133,14 +132,14 @@
         
         <div class="card mt-2">
             <div class="card-header">
-                <h2>Ссылка подписки</h2>
+                <h2><%= t('users.subscriptionLink') %></h2>
             </div>
             <div class="card-body">
                 <div id="qrcode" style="text-align:center;margin-bottom:12px;"></div>
-                <p class="hint mb-1">Универсальная ссылка (приложения + браузер):</p>
+                <p class="hint mb-1"><%= t('users.universalLink') %></p>
                 <input type="text" readonly class="input-readonly" 
                        value="<%= baseUrl %>/api/files/<%= user.subscriptionToken || user.userId %>" id="subLink">
-                <button class="btn btn-sm btn-block mt-1" onclick="copySubscription()">Копировать</button>
+                <button class="btn btn-sm btn-block mt-1" onclick="copySubscription()"><%= t('common.copy') %></button>
             </div>
         </div>
     </div>
@@ -150,6 +149,11 @@
 
 <script>
 const userId = '<%= user.userId %>';
+const i18n = {
+    error: '<%= t("common.error") %>',
+    confirmDelete: '<%= t("users.confirmDelete") %> ' + userId + '?',
+    linkCopied: '<%= t("users.linkCopied") %>'
+};
 
 async function toggleUser(enabled) {
     const res = await fetch(`/api/users/${userId}/${enabled ? 'enable' : 'disable'}`, {
@@ -157,35 +161,33 @@ async function toggleUser(enabled) {
         headers: { 'X-API-Key': window.API_KEY }
     });
     if (res.ok) location.reload();
-    else alert('Ошибка');
+    else alert(i18n.error);
 }
 
 async function deleteUser() {
-    if (!confirm('Удалить пользователя ' + userId + '?')) return;
+    if (!confirm(i18n.confirmDelete)) return;
     
     const res = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
         headers: { 'X-API-Key': window.API_KEY }
     });
     if (res.ok) location.href = '/panel/users';
-    else alert('Ошибка удаления');
+    else alert(i18n.error);
 }
 
 function copySubscription() {
     const link = document.getElementById('subLink').value;
     navigator.clipboard.writeText(link).then(() => {
-        alert('Ссылка скопирована!');
+        alert(i18n.linkCopied);
     }).catch(() => {
     document.getElementById('subLink').select();
     document.execCommand('copy');
-    alert('Ссылка скопирована!');
+    alert(i18n.linkCopied);
     });
 }
 
-// QR-код генерируется на клиенте (без нагрузки на сервер)
 const subUrl = document.getElementById('subLink').value;
 QRCode.toCanvas(document.createElement('canvas'), subUrl, { width: 180, margin: 1 }, (err, canvas) => {
     if (!err) document.getElementById('qrcode').appendChild(canvas);
 });
 </script>
-

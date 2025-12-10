@@ -1,8 +1,8 @@
 <div class="page-header">
     <div class="page-header-left">
-        <span class="results-count">Всего: <%= nodes.length %></span>
+        <span class="results-count"><%= t('common.total') %>: <%= nodes.length %></span>
     </div>
-    <a href="/panel/nodes/add" class="btn btn-primary">+ Добавить ноду</a>
+    <a href="/panel/nodes/add" class="btn btn-primary">+ <%= t('nodes.addNode') %></a>
 </div>
 
 <div class="card">
@@ -10,13 +10,13 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Название</th>
-                    <th>Сервер</th>
-                    <th>Порты</th>
-                    <th>Статус</th>
-                    <th>Онлайн</th>
-                    <th>Группы</th>
-                    <th>Действия</th>
+                    <th><%= t('common.name') %></th>
+                    <th><%= t('common.server') %></th>
+                    <th><%= t('common.ports') %></th>
+                    <th><%= t('common.status') %></th>
+                    <th><%= t('common.online') %></th>
+                    <th><%= t('nodes.groups') %></th>
+                    <th><%= t('common.actions') %></th>
                 </tr>
             </thead>
             <tbody>
@@ -25,8 +25,8 @@
                     <td colspan="7" class="text-center text-muted">
                         <div class="empty-state">
                             <span class="empty-icon">🖥️</span>
-                            <p>Нет добавленных нод</p>
-                            <a href="/panel/nodes/add" class="btn btn-primary">Добавить первую ноду</a>
+                            <p><%= t('nodes.noNodes') %></p>
+                            <a href="/panel/nodes/add" class="btn btn-primary"><%= t('nodes.addFirstNode') %></a>
                         </div>
                     </td>
                 </tr>
@@ -51,7 +51,7 @@
                             <%= node.status %>
                         </span>
                         <% if (!node.active) { %>
-                        <span class="badge badge-secondary">выкл</span>
+                        <span class="badge badge-secondary"><%= t('nodes.off') %></span>
                         <% } %>
                     </td>
                     <td>
@@ -70,13 +70,13 @@
                                 <span class="group-more">+<%= node.groups.length - 2 %></span>
                             <% } %>
                         <% } else { %>
-                            <span class="text-muted">Все</span>
+                            <span class="text-muted"><%= t('common.all') %></span>
                         <% } %>
                     </td>
                     <td>
                         <div class="btn-group">
-                            <a href="/panel/nodes/<%= node._id %>" class="btn btn-sm">Редактировать</a>
-                            <button class="btn btn-sm btn-danger" onclick="deleteNode('<%= node._id %>')">Удалить</button>
+                            <a href="/panel/nodes/<%= node._id %>" class="btn btn-sm"><%= t('common.edit') %></a>
+                            <button class="btn btn-sm btn-danger" onclick="deleteNode('<%= node._id %>')"><%= t('common.delete') %></button>
                         </div>
                     </td>
                 </tr>
@@ -87,8 +87,13 @@
 </div>
 
 <script>
+const i18n = {
+    confirmDelete: '<%= t("nodes.confirmDelete") %>',
+    deleteError: '<%= t("nodes.deleteError") %>'
+};
+
 async function deleteNode(id) {
-    if (!confirm('Удалить ноду?')) return;
+    if (!confirm(i18n.confirmDelete)) return;
     
     const res = await fetch(`/api/nodes/${id}`, {
         method: 'DELETE',
@@ -98,9 +103,7 @@ async function deleteNode(id) {
     if (res.ok) {
         location.reload();
     } else {
-        alert('Ошибка удаления');
+        alert(i18n.deleteError);
     }
 }
 </script>
-
-

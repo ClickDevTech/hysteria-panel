@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="<%= typeof lang !== 'undefined' ? lang : 'en' %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSH Terminal - <%= node.name %></title>
+    <title><%= typeof t !== 'undefined' ? t('terminal.title') : 'SSH Terminal' %> - <%= node.name %></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -150,12 +150,12 @@
             <h1>🖥️ <%= node.name %> (<%= node.ip %>)</h1>
             <div class="status">
                 <div class="status-dot connecting" id="statusDot"></div>
-                <span id="statusText">Подключение...</span>
+                <span id="statusText"><%= typeof t !== 'undefined' ? t('terminal.connecting') : 'Connecting...' %></span>
             </div>
         </div>
         <div class="header-right">
-            <button class="btn" onclick="reconnect()">🔄 Переподключить</button>
-            <button class="btn btn-danger" onclick="disconnect()">✕ Закрыть</button>
+            <button class="btn" onclick="reconnect()">🔄 <%= typeof t !== 'undefined' ? t('nodes.reconnect') : 'Reconnect' %></button>
+            <button class="btn btn-danger" onclick="disconnect()">✕ <%= typeof t !== 'undefined' ? t('common.close') : 'Close' %></button>
         </div>
     </div>
     
@@ -166,7 +166,7 @@
     <div class="overlay" id="connectingOverlay">
         <div class="overlay-content">
             <div class="spinner"></div>
-            <h2>Подключение к <%= node.name %></h2>
+            <h2><%= typeof t !== 'undefined' ? t('terminal.connectingTo') : 'Connecting to' %> <%= node.name %></h2>
             <p><%= node.ip %>:<%= node.ssh?.port || 22 %></p>
         </div>
     </div>
@@ -174,9 +174,9 @@
     <div class="overlay hidden" id="errorOverlay">
         <div class="overlay-content">
             <div class="error-message">
-                <h2>❌ Ошибка подключения</h2>
+                <h2>❌ <%= typeof t !== 'undefined' ? t('terminal.connectionError') : 'Connection error' %></h2>
                 <p id="errorText"></p>
-                <button class="btn" onclick="reconnect()" style="margin-top: 15px;">Попробовать снова</button>
+                <button class="btn" onclick="reconnect()" style="margin-top: 15px;"><%= typeof t !== 'undefined' ? t('terminal.tryAgain') : 'Try Again' %></button>
             </div>
         </div>
     </div>
@@ -186,6 +186,14 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js"></script>
     <script>
         const nodeId = '<%= node._id %>';
+        const i18n = {
+            connecting: '<%= typeof t !== "undefined" ? t("terminal.connecting") : "Connecting..." %>',
+            connected: '<%= typeof t !== "undefined" ? t("terminal.connected") : "Connected" %>',
+            disconnected: '<%= typeof t !== "undefined" ? t("terminal.disconnected") : "Disconnected" %>',
+            connectionClosed: '<%= typeof t !== "undefined" ? t("terminal.connectionClosed") : "[Connection closed]" %>',
+            wsError: '<%= typeof t !== "undefined" ? t("terminal.wsError") : "WebSocket connection error" %>'
+        };
+        
         let ws = null;
         let term = null;
         let fitAddon = null;
@@ -227,14 +235,12 @@
             term.open(document.getElementById('terminal'));
             fitAddon.fit();
             
-            // Отправляем ввод пользователя
             term.onData((data) => {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({ type: 'input', data }));
                 }
             });
             
-            // Resize
             window.addEventListener('resize', () => {
                 fitAddon.fit();
                 if (ws && ws.readyState === WebSocket.OPEN) {
@@ -253,7 +259,7 @@
             
             document.getElementById('connectingOverlay').classList.remove('hidden');
             document.getElementById('errorOverlay').classList.add('hidden');
-            updateStatus('connecting', 'Подключение...');
+            updateStatus('connecting', i18n.connecting);
             
             ws = new WebSocket(wsUrl);
             
@@ -267,9 +273,8 @@
                 switch (msg.type) {
                     case 'connected':
                         document.getElementById('connectingOverlay').classList.add('hidden');
-                        updateStatus('connected', 'Подключено');
+                        updateStatus('connected', i18n.connected);
                         term.focus();
-                        // Отправляем размер
                         ws.send(JSON.stringify({ 
                             type: 'resize', 
                             cols: term.cols, 
@@ -286,19 +291,19 @@
                         break;
                         
                     case 'closed':
-                        updateStatus('disconnected', 'Отключено');
-                        term.write('\r\n\x1b[31m[Соединение закрыто]\x1b[0m\r\n');
+                        updateStatus('disconnected', i18n.disconnected);
+                        term.write('\r\n\x1b[31m' + i18n.connectionClosed + '\x1b[0m\r\n');
                         break;
                 }
             };
             
             ws.onerror = (error) => {
                 console.error('WebSocket error:', error);
-                showError('Ошибка WebSocket соединения');
+                showError(i18n.wsError);
             };
             
             ws.onclose = () => {
-                updateStatus('disconnected', 'Отключено');
+                updateStatus('disconnected', i18n.disconnected);
             };
         }
         
@@ -314,7 +319,7 @@
             document.getElementById('connectingOverlay').classList.add('hidden');
             document.getElementById('errorOverlay').classList.remove('hidden');
             document.getElementById('errorText').textContent = message;
-            updateStatus('disconnected', 'Ошибка');
+            updateStatus('disconnected', i18n.disconnected);
         }
         
         function reconnect() {
@@ -332,13 +337,11 @@
                 ws.close();
             }
             window.close();
-            // Если окно не закрылось - редирект на панель
             setTimeout(() => {
                 window.location.href = '/panel/nodes';
             }, 100);
         }
         
-        // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
             initTerminal();
             connect();
@@ -346,8 +349,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-

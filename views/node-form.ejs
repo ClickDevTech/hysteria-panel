@@ -1,23 +1,23 @@
 <div class="page-header">
-    <a href="/panel/nodes" class="btn btn-back">← Назад к списку</a>
+    <a href="/panel/nodes" class="btn btn-back"><%= t('common.backToList') %></a>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h2><%= node ? 'Редактирование ноды' : 'Новая нода' %></h2>
+        <h2><%= node ? t('nodes.editNode') : t('nodes.newNode') %></h2>
     </div>
     <div class="card-body">
         <form method="POST" action="/panel/nodes<%= node ? '/' + node._id : '' %>" class="form">
             <div class="form-row">
                 <div class="form-group">
-                    <label for="name">Название *</label>
+                    <label for="name"><%= t('nodes.nodeName') %></label>
                     <input type="text" id="name" name="name" value="<%= node?.name || '' %>" 
-                           placeholder="Германия, Нидерланды..." required>
-                    <small>Отображается в подписке клиента</small>
+                           placeholder="<%= t('nodes.nodeNamePlaceholder') %>" required>
+                    <small><%= t('nodes.nodeNameHint') %></small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="ip">IP адрес *</label>
+                    <label for="ip"><%= t('nodes.ipAddress') %></label>
                     <input type="text" id="ip" name="ip" value="<%= node?.ip || '' %>" 
                            placeholder="123.45.67.89" required>
                 </div>
@@ -25,22 +25,22 @@
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="flag">Флаг (эмодзи)</label>
+                    <label for="flag"><%= t('nodes.flag') %></label>
                     <input type="text" id="flag" name="flag" value="<%= node?.flag || '' %>" 
-                           placeholder="🇩🇪">
-                    <small>Эмодзи флага страны</small>
+                           placeholder="<%= t('nodes.flagPlaceholder') %>">
+                    <small><%= t('nodes.flagHint') %></small>
                 </div>
             </div>
             
                 <div class="form-group">
-                    <label for="domain">Домен (для SNI)</label>
+                    <label for="domain"><%= t('nodes.domain') %></label>
                     <input type="text" id="domain" name="domain" value="<%= node?.domain || '' %>" 
                            placeholder="de.example.com">
-                    <small>Опционально. Используется для TLS и в подписке</small>
+                    <small><%= t('nodes.domainHint') %></small>
                 </div>
                 
                 <div class="form-group">
-                <label>Группы серверов</label>
+                <label><%= t('nodes.groups') %></label>
                 <div class="groups-select">
                     <% if (groups && groups.length > 0) { %>
                         <% groups.forEach(group => { 
@@ -53,52 +53,52 @@
                             </label>
                         <% }); %>
                     <% } else { %>
-                        <p class="hint">Нет групп. <a href="/panel/groups">Создайте группу</a></p>
+                        <p class="hint"><%= t('nodes.noGroups') %> <a href="/panel/groups"><%= t('nodes.createGroup') %></a></p>
                     <% } %>
                 </div>
-                <small>Пользователи этих групп получат доступ к этой ноде. Если не выбрано — доступна всем.</small>
+                <small><%= t('nodes.groupsHint') %></small>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="port">Основной порт</label>
+                    <label for="port"><%= t('nodes.port') %></label>
                     <input type="number" id="port" name="port" value="<%= node?.port || 443 %>" 
                            placeholder="443">
                 </div>
                 
                 <div class="form-group">
-                    <label for="portRange">Port Hopping диапазон</label>
+                    <label for="portRange"><%= t('nodes.portRange') %></label>
                     <input type="text" id="portRange" name="portRange" value="<%= node?.portRange || '20000-50000' %>" 
                            placeholder="20000-50000">
-                    <small>Клиенты будут подключаться на эти порты</small>
+                    <small><%= t('nodes.portRangeHint') %></small>
                 </div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="maxOnlineUsers">Лимит онлайн пользователей</label>
+                    <label for="maxOnlineUsers"><%= t('nodes.maxOnlineUsers') %></label>
                     <input type="number" id="maxOnlineUsers" name="maxOnlineUsers" 
                            value="<%= node?.maxOnlineUsers || 0 %>" placeholder="0" min="0">
-                    <small>0 = без лимита. При превышении нода скрывается из подписки (если включено).</small>
+                    <small><%= t('nodes.maxOnlineHint') %></small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="rankingCoefficient">Приоритет (ranking)</label>
+                    <label for="rankingCoefficient"><%= t('nodes.rankingCoefficient') %></label>
                     <input type="number" id="rankingCoefficient" name="rankingCoefficient" 
                            value="<%= node?.rankingCoefficient || 1 %>" placeholder="1" min="0" step="0.1">
-                    <small>Меньше = выше в списке подписки</small>
+                    <small><%= t('nodes.rankingHint') %></small>
                 </div>
             </div>
             
             <div class="form-section">
-                <h3>API статистики</h3>
+                <h3><%= t('nodes.statsPort') %> API</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="statsPort">Порт API</label>
+                        <label for="statsPort"><%= t('nodes.statsPort') %></label>
                         <input type="number" id="statsPort" name="statsPort" value="<%= node?.statsPort || 9999 %>">
                     </div>
                     <div class="form-group">
-                        <label for="statsSecret">Секрет API</label>
+                        <label for="statsSecret"><%= t('nodes.statsSecret') %></label>
                         <input type="text" id="statsSecret" name="statsSecret" value="<%= node?.statsSecret || '' %>" 
                                placeholder="secret123">
                     </div>
@@ -106,62 +106,62 @@
             </div>
             
             <div class="form-section">
-                <h3>SSH доступ (опционально)</h3>
-                <small class="section-hint">Для автоматического управления конфигом ноды</small>
+                <h3><%= t('nodes.sshSettings') %></h3>
+                <small class="section-hint"><%= t('nodes.sshSettingsHint') %></small>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="sshPort">Порт SSH</label>
+                        <label for="sshPort"><%= t('nodes.sshPort') %></label>
                         <input type="number" id="sshPort" name="ssh.port" value="<%= node?.ssh?.port || 22 %>">
                     </div>
                     <div class="form-group">
-                        <label for="sshUsername">Пользователь</label>
+                        <label for="sshUsername"><%= t('nodes.sshUsername') %></label>
                         <input type="text" id="sshUsername" name="ssh.username" value="<%= node?.ssh?.username || 'root' %>">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="sshPassword">Пароль SSH <%= node?.ssh?.password ? '(установлен)' : '' %></label>
+                    <label for="sshPassword"><%= t('nodes.sshPassword') %> <%= node?.ssh?.password ? t('nodes.sshPasswordSet') : '' %></label>
                     <input type="password" id="sshPassword" name="ssh.password" 
-                           placeholder="<%= node?.ssh?.password ? 'Оставьте пустым чтобы не менять' : 'Введите пароль' %>">
-                    <small class="hint">Пароль хранится в зашифрованном виде</small>
+                           placeholder="<%= node?.ssh?.password ? t('nodes.sshPasswordKeep') : t('nodes.sshPasswordPlaceholder') %>">
+                    <small class="hint"><%= t('nodes.sshPasswordEncrypted') %></small>
                 </div>
             </div>
             
             <div class="form-section">
-                <h3>Конфигурация Hysteria</h3>
+                <h3><%= t('nodes.hysteriaConfig') %></h3>
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" name="useCustomConfig" id="useCustomConfig" 
                                <%= node?.useCustomConfig ? 'checked' : '' %>
                                onchange="toggleCustomConfig()">
-                        Использовать кастомный конфиг
+                        <%= t('nodes.useCustomConfig') %>
                     </label>
-                    <small>Если включено — при синхронизации будет использоваться конфиг ниже вместо автогенерации</small>
+                    <small><%= t('nodes.customConfigHint') %></small>
                 </div>
                 
                 <div id="customConfigSection" style="<%= node?.useCustomConfig ? '' : 'display:none' %>">
                     <div class="form-group">
-                        <label for="customConfig">Конфиг config.yaml</label>
+                        <label for="customConfig"><%= t('nodes.customConfigLabel') %></label>
                         <textarea id="customConfig" name="customConfig" rows="20" 
                                   class="code-textarea" placeholder="listen: :443&#10;&#10;acme:&#10;  domains:&#10;    - example.com..."><%= node?.customConfig || '' %></textarea>
-                        <small>YAML формат. Используйте кнопку "Сгенерировать" чтобы заполнить базовым конфигом.</small>
+                        <small><%= t('nodes.customConfigFormat') %></small>
                     </div>
-                    <button type="button" class="btn btn-sm" onclick="generateConfig()">📝 Сгенерировать базовый конфиг</button>
-                    <button type="button" class="btn btn-sm" onclick="loadCurrentConfig()">📥 Загрузить текущий с ноды</button>
+                    <button type="button" class="btn btn-sm" onclick="generateConfig()"><%= t('nodes.generateConfig') %></button>
+                    <button type="button" class="btn btn-sm" onclick="loadCurrentConfig()"><%= t('nodes.loadCurrentConfig') %></button>
                 </div>
             </div>
             
             <div class="form-group">
                 <label class="checkbox-label">
                     <input type="checkbox" name="active" <%= node?.active !== false ? 'checked' : '' %>>
-                    Нода активна
+                    <%= t('nodes.nodeActive') %>
                 </label>
             </div>
             
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
-                    <%= node ? 'Сохранить' : 'Создать ноду' %>
+                    <%= node ? t('nodes.saveNode') : t('nodes.createNode') %>
                 </button>
-                <a href="/panel/nodes" class="btn">Отмена</a>
+                <a href="/panel/nodes" class="btn"><%= t('common.cancel') %></a>
             </div>
         </form>
     </div>
@@ -170,36 +170,36 @@
 <% if (node) { %>
 <div class="card mt-3">
     <div class="card-header">
-        <h2>Управление</h2>
+        <h2><%= t('nodes.management') %></h2>
     </div>
     <div class="card-body">
         <div class="actions-grid">
             <button class="action-btn" onclick="setupNode()" id="btnSetup">
                 <span class="action-icon">⚙️</span>
-                <span>Настроить автоматически</span>
+                <span><%= t('nodes.autoSetup') %></span>
             </button>
             <button class="action-btn" onclick="openTerminal()">
                 <span class="action-icon">🖥️</span>
-                <span>SSH Терминал</span>
+                <span><%= t('nodes.terminal') %></span>
             </button>
             <button class="action-btn" onclick="getNodeLogs()">
                 <span class="action-icon">📋</span>
-                <span>Логи Hysteria</span>
+                <span><%= t('nodes.viewLogs') %></span>
             </button>
             <button class="action-btn" onclick="checkStatus()">
                 <span class="action-icon">🔍</span>
-                <span>Проверить статус</span>
+                <span><%= t('nodes.checkStatus') %></span>
             </button>
             <button class="action-btn" onclick="resetStatus()">
                 <span class="action-icon">🔄</span>
-                <span>Сбросить статус</span>
+                <span><%= t('nodes.resetStatus') %></span>
             </button>
         </div>
         <div id="setupResult" class="mt-2"></div>
         <div id="logsContainer" class="mt-2" style="display:none;">
             <div class="logs-header">
-                <strong>📋 Логи выполнения:</strong>
-                <button class="btn btn-sm" onclick="clearLogs()">Очистить</button>
+                <strong><%= t('nodes.executionLogs') %></strong>
+                <button class="btn btn-sm" onclick="clearLogs()"><%= t('common.clear') %></button>
             </div>
             <pre class="logs-output" id="logsOutput"></pre>
         </div>
@@ -231,6 +231,17 @@
 </style>
 
 <script>
+const i18n = {
+    autoSetupConfirm: '<%= t("nodes.autoSetupConfirm").replace(/\n/g, "\\n") %>',
+    setupRunning: '<%= t("nodes.setupRunning") %>',
+    loadingLogs: '<%= t("nodes.loadingLogs") %>',
+    checking: '<%= t("nodes.checking") %>',
+    resettingStatus: '<%= t("nodes.resettingStatus") %>',
+    statusReset: '<%= t("nodes.statusReset") %>',
+    autoSetup: '<%= t("nodes.autoSetup") %>',
+    error: '<%= t("common.error") %>'
+};
+
 function showLogs(logs) {
     const container = document.getElementById('logsContainer');
     const output = document.getElementById('logsOutput');
@@ -263,13 +274,13 @@ function clearLogs() {
 }
 
 async function setupNode() {
-    if (!confirm('Настроить ноду автоматически через SSH?\n\nЭто:\n• Установит Hysteria (если не установлена)\n• Сгенерирует сертификат\n• Загрузит конфигурацию\n• Настроит port hopping\n• Перезапустит сервис')) return;
+    if (!confirm(i18n.autoSetupConfirm)) return;
     
     const btn = document.getElementById('btnSetup');
     btn.disabled = true;
-    btn.innerHTML = '<span class="action-icon">⏳</span><span>Настройка...</span>';
+    btn.innerHTML = '<span class="action-icon">⏳</span><span>...</span>';
     
-    document.getElementById('setupResult').innerHTML = '<div class="alert">⏳ Выполняется настройка... Это может занять 1-2 минуты.</div>';
+    document.getElementById('setupResult').innerHTML = '<div class="alert">' + i18n.setupRunning + '</div>';
     
     try {
         const res = await fetch('/panel/nodes/<%= node._id %>/setup', {
@@ -277,7 +288,6 @@ async function setupNode() {
         });
         const data = await res.json();
         
-        // Показываем логи
         if (data.logs) {
             showLogs(data.logs);
         }
@@ -285,18 +295,18 @@ async function setupNode() {
         if (data.success) {
             document.getElementById('setupResult').innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
         } else {
-            document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">❌ ' + (data.error || 'Ошибка') + '</div>';
+            document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">❌ ' + (data.error || i18n.error) + '</div>';
         }
     } catch (err) {
         document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">❌ ' + err.message + '</div>';
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<span class="action-icon">⚙️</span><span>Настроить автоматически</span>';
+        btn.innerHTML = '<span class="action-icon">⚙️</span><span>' + i18n.autoSetup + '</span>';
     }
 }
 
 async function getNodeLogs() {
-    document.getElementById('setupResult').innerHTML = '<div class="alert">📋 Загрузка логов...</div>';
+    document.getElementById('setupResult').innerHTML = '<div class="alert">' + i18n.loadingLogs + '</div>';
     
     try {
         const res = await fetch('/panel/nodes/<%= node._id %>/logs');
@@ -314,7 +324,7 @@ async function getNodeLogs() {
 }
 
 async function checkStatus() {
-    document.getElementById('setupResult').innerHTML = '<div class="alert">🔍 Проверка...</div>';
+    document.getElementById('setupResult').innerHTML = '<div class="alert">' + i18n.checking + '</div>';
     
     try {
         const res = await fetch('/api/nodes/<%= node._id %>/status', {
@@ -327,9 +337,9 @@ async function checkStatus() {
         const color = statusColors[data.status] || '';
         const icon = statusIcons[data.status] || '❓';
         
-        document.getElementById('setupResult').innerHTML = '<div class="alert ' + color + '">' + icon + ' Статус: ' + data.status + '</div>';
+        document.getElementById('setupResult').innerHTML = '<div class="alert ' + color + '">' + icon + ' Status: ' + data.status + '</div>';
     } catch (err) {
-        document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">Ошибка: ' + err.message + '</div>';
+        document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">' + i18n.error + ': ' + err.message + '</div>';
     }
 }
 
@@ -338,7 +348,7 @@ function openTerminal() {
 }
 
 async function resetStatus() {
-    document.getElementById('setupResult').innerHTML = '<div class="alert">🔄 Сброс статуса...</div>';
+    document.getElementById('setupResult').innerHTML = '<div class="alert">' + i18n.resettingStatus + '</div>';
     
     try {
         const res = await fetch('/api/nodes/<%= node._id %>/reset-status', {
@@ -348,22 +358,22 @@ async function resetStatus() {
         const data = await res.json();
         
         if (data.success) {
-            document.getElementById('setupResult').innerHTML = '<div class="alert alert-success">✅ Статус сброшен на online</div>';
+            document.getElementById('setupResult').innerHTML = '<div class="alert alert-success">' + i18n.statusReset + '</div>';
         } else {
-            document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">❌ ' + (data.error || 'Ошибка') + '</div>';
+            document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">❌ ' + (data.error || i18n.error) + '</div>';
         }
     } catch (err) {
-        document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">Ошибка: ' + err.message + '</div>';
+        document.getElementById('setupResult').innerHTML = '<div class="alert alert-error">' + i18n.error + ': ' + err.message + '</div>';
     }
 }
 </script>
 
 <div class="card mt-3">
     <div class="card-header">
-        <h2>Конфиг для ноды</h2>
+        <h2><%= t('nodes.nodeConfig') %></h2>
     </div>
     <div class="card-body">
-        <p class="hint">Скопируйте этот конфиг в <code>/etc/hysteria/config.yaml</code> на сервере:</p>
+        <p class="hint"><%- t('nodes.configHint') %></p>
         <pre class="code-block"><code>listen: :<%= node.port %>
 
 tls:
@@ -393,7 +403,7 @@ masquerade:
 acl:
   inline:
     - reject(geoip:cn)</code></pre>
-        <button class="btn btn-sm" onclick="copyConfig()">Копировать</button>
+        <button class="btn btn-sm" onclick="copyConfig()"><%= t('common.copy') %></button>
     </div>
 </div>
 <% } %>
@@ -418,10 +428,19 @@ acl:
 </style>
 
 <script>
+const i18nConfig = {
+    copied: '<%= t("common.copied") %>',
+    loadConfigConfirm: '<%= t("nodes.loadConfigConfirm") %>',
+    configLoaded: '<%= t("nodes.configLoaded") %>',
+    saveFirst: '<%= t("nodes.saveFirst") %>',
+    error: '<%= t("common.error") %>',
+    baseUrl: '<%= baseUrl %>'
+};
+
 function copyConfig() {
     const code = document.querySelector('.code-block code').textContent;
     navigator.clipboard.writeText(code);
-    alert('Скопировано!');
+    alert(i18nConfig.copied);
 }
 
 function toggleCustomConfig() {
@@ -476,10 +495,9 @@ quic:
 auth:
   type: http
   http:
-    url: <%= baseUrl %>/api/auth
+    url: ${i18nConfig.baseUrl}/api/auth
     insecure: false
 
-# Ограничение скорости (раскомментируй при необходимости)
 # bandwidth:
 #   up: 100 mbps
 #   down: 100 mbps
@@ -508,7 +526,7 @@ trafficStats:
 
 async function loadCurrentConfig() {
     <% if (node) { %>
-    if (!confirm('Загрузить текущий конфиг с ноды через SSH?')) return;
+    if (!confirm(i18nConfig.loadConfigConfirm)) return;
     
     try {
         const res = await fetch('/panel/nodes/<%= node._id %>/get-config');
@@ -516,16 +534,15 @@ async function loadCurrentConfig() {
         
         if (data.success) {
             document.getElementById('customConfig').value = data.config;
-            alert('Конфиг загружен!');
+            alert(i18nConfig.configLoaded);
         } else {
-            alert('Ошибка: ' + data.error);
+            alert(i18nConfig.error + ': ' + data.error);
         }
     } catch (err) {
-        alert('Ошибка: ' + err.message);
+        alert(i18nConfig.error + ': ' + err.message);
     }
     <% } else { %>
-    alert('Сначала сохраните ноду');
+    alert(i18nConfig.saveFirst);
     <% } %>
 }
 </script>
-

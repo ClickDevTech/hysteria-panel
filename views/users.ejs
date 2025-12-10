@@ -1,22 +1,22 @@
 <div class="page-header sticky-header">
     <div class="page-header-left">
-        <span class="results-count"><%= pagination.total %> пользователей</span>
+        <span class="results-count"><%= pagination.total %> <%= t('nav.users').toLowerCase() %></span>
     </div>
     <div class="page-header-center">
         <div class="filters-bar">
             <div class="search-box">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="searchUser" placeholder="Поиск по userId, username..." 
+                <input type="text" id="searchUser" placeholder="<%= t('users.searchPlaceholder') %>" 
                        value="<%= query.search || '' %>" autocomplete="off">
                 <kbd class="search-hint">/</kbd>
             </div>
             <select id="filterEnabled" class="filter-select">
-                <option value="">Все статусы</option>
-                <option value="true" <%= query.enabled === 'true' ? 'selected' : '' %>>✓ Активные</option>
-                <option value="false" <%= query.enabled === 'false' ? 'selected' : '' %>>○ Неактивные</option>
+                <option value=""><%= t('users.allStatuses') %></option>
+                <option value="true" <%= query.enabled === 'true' ? 'selected' : '' %>><%= t('users.activeFilter') %></option>
+                <option value="false" <%= query.enabled === 'false' ? 'selected' : '' %>><%= t('users.inactiveFilter') %></option>
             </select>
             <select id="filterGroup" class="filter-select">
-                <option value="">Все группы</option>
+                <option value=""><%= t('users.allGroups') %></option>
                 <% if (groups) { groups.forEach(group => { %>
                 <option value="<%= group._id %>" <%= query.group === group._id.toString() ? 'selected' : '' %>><%= group.name %></option>
                 <% }); } %>
@@ -25,7 +25,7 @@
     </div>
     <div class="page-header-right">
         <a href="/panel/users/add" class="btn btn-primary">
-            <span>+</span> Создать
+            <span>+</span> <%= t('common.create') %>
         </a>
     </div>
 </div>
@@ -36,14 +36,14 @@
             <thead>
                 <tr>
                     <th class="th-user sortable" onclick="sortBy('userId')" style="cursor: pointer;">
-                        Пользователь <%= getSortIcon('userId') %>
+                        <%= t('users.user') %> <%= getSortIcon('userId') %>
                     </th>
-                    <th class="th-status">Статус</th>
-                    <th class="th-groups">Группы</th>
+                    <th class="th-status"><%= t('common.status') %></th>
+                    <th class="th-groups"><%= t('users.groups') %></th>
                     <th class="th-traffic sortable" onclick="sortBy('traffic')" style="cursor: pointer;">
-                        Трафик <%= getSortIcon('traffic') %>
+                        <%= t('users.traffic') %> <%= getSortIcon('traffic') %>
                     </th>
-                    <th class="th-actions">Действия</th>
+                    <th class="th-actions"><%= t('common.actions') %></th>
                 </tr>
             </thead>
             <tbody>
@@ -52,8 +52,8 @@
                     <td colspan="5" class="empty-cell">
                         <div class="empty-state">
                             <span class="empty-icon">👥</span>
-                            <p>Нет пользователей</p>
-                            <a href="/panel/users/add" class="btn btn-primary btn-sm">Создать первого</a>
+                            <p><%= t('users.noUsers') %></p>
+                            <a href="/panel/users/add" class="btn btn-primary btn-sm"><%= t('users.createFirst') %></a>
                         </div>
                     </td>
                 </tr>
@@ -69,7 +69,7 @@
                         </div>
                     </td>
                     <td class="td-status">
-                        <label class="toggle-switch" title="<%= user.enabled ? 'Отключить' : 'Включить' %>">
+                        <label class="toggle-switch" title="<%= user.enabled ? t('users.disable') : t('users.enable') %>">
                             <input type="checkbox" <%= user.enabled ? 'checked' : '' %> 
                                    onchange="toggleUser('<%= user.userId %>', this.checked)">
                             <span class="toggle-slider"></span>
@@ -109,10 +109,10 @@
                     </td>
                     <td class="td-actions">
                         <div class="action-buttons">
-                            <button class="btn-icon" onclick="copySubscription('<%= user.subscriptionToken || user.userId %>')" title="Копировать подписку">
+                            <button class="btn-icon" onclick="copySubscription('<%= user.subscriptionToken || user.userId %>')" title="<%= t('users.copySubscription') %>">
                                 📋
                             </button>
-                            <a href="/panel/users/<%= user.userId %>" class="btn-icon" title="Подробнее">
+                            <a href="/panel/users/<%= user.userId %>" class="btn-icon" title="<%= t('users.details') %>">
                                 →
                             </a>
                         </div>
@@ -127,8 +127,8 @@
     <div class="mobile-users-list">
         <% if (users.length === 0) { %>
             <div style="text-align: center; padding: 40px 20px;">
-                <p style="color: var(--text-muted); margin-bottom: 16px;">Нет пользователей</p>
-                <a href="/panel/users/add" class="btn btn-primary btn-sm">Создать первого</a>
+                <p style="color: var(--text-muted); margin-bottom: 16px;"><%= t('users.noUsers') %></p>
+                <a href="/panel/users/add" class="btn btn-primary btn-sm"><%= t('users.createFirst') %></a>
             </div>
         <% } %>
         <% users.forEach(user => { 
@@ -144,7 +144,7 @@
                             <code style="font-size: 11px; color: var(--text-muted);"><%= user.username %></code>
                         <% } %>
                     </div>
-                    <label class="toggle-switch" title="<%= user.enabled ? 'Отключить' : 'Включить' %>">
+                    <label class="toggle-switch" title="<%= user.enabled ? t('users.disable') : t('users.enable') %>">
                         <input type="checkbox" <%= user.enabled ? 'checked' : '' %> 
                                onchange="toggleUser('<%= user.userId %>', this.checked)">
                         <span class="toggle-slider"></span>
@@ -153,16 +153,16 @@
                 
                 <div class="mobile-node-stats">
                     <div class="mobile-stat-item">
-                        <span class="mobile-stat-label">Трафик</span>
+                        <span class="mobile-stat-label"><%= t('users.traffic') %></span>
                         <span class="mobile-stat-value">
                             <%= used.toFixed(1) %> GB<% if (limit > 0) { %> / <%= limit.toFixed(0) %><% } else { %> ∞<% } %>
                         </span>
                     </div>
                     <div class="mobile-stat-item">
-                        <span class="mobile-stat-label">Группы</span>
+                        <span class="mobile-stat-label"><%= t('users.groups') %></span>
                         <span class="mobile-stat-value" style="font-size: 12px;">
                             <% if (user.groups && user.groups.length > 0) { %>
-                                <%= user.groups.length %> групп
+                                <%= user.groups.length %> <%= t('users.groupsCount') %>
                             <% } else { %>
                                 —
                             <% } %>
@@ -185,10 +185,10 @@
                 
                 <div class="mobile-node-actions">
                     <button class="btn btn-sm" onclick="copySubscription('<%= user.subscriptionToken || user.userId %>')" style="flex: 1;">
-                        📋 Подписка
+                        📋 <%= t('users.subscription') %>
                     </button>
                     <a href="/panel/users/<%= user.userId %>" class="btn btn-sm" style="flex: 1;">
-                        → Подробнее
+                        <%= t('users.details') %>
                     </a>
                 </div>
             </div>
@@ -231,13 +231,12 @@
 <div id="toast" class="toast"></div>
 
 <%
-// Helper функция для иконки сортировки
 function getSortIcon(field) {
     const currentSort = query.sortBy || 'createdAt';
     const currentOrder = query.sortOrder || 'desc';
     
     if (currentSort !== field) {
-        return '↕️'; // Не активна сортировка
+        return '↕️';
     }
     
     return currentOrder === 'desc' ? '↓' : '↑';
@@ -248,6 +247,13 @@ function getSortIcon(field) {
 const baseUrl = '<%= baseUrl %>';
 const currentSortBy = '<%= query.sortBy || "createdAt" %>';
 const currentSortOrder = '<%= query.sortOrder || "desc" %>';
+const i18n = {
+    turnedOn: '<%= t("users.turnedOn") %>',
+    turnedOff: '<%= t("users.turnedOff") %>',
+    error: '<%= t("common.error") %>',
+    linkCopied: '<%= t("users.linkCopied") %>',
+    copyError: '<%= t("users.copyError") %>'
+};
 
 // Debounced search
 let searchTimeout;
@@ -296,10 +302,10 @@ async function toggleUser(userId, enabled) {
         });
         
         if (!res.ok) throw new Error('Failed');
-        showToast(enabled ? '✓ Включён' : '○ Отключён');
+        showToast(enabled ? i18n.turnedOn : i18n.turnedOff);
     } catch (e) {
         toggle.checked = !enabled; // Revert
-        showToast('Ошибка', 'error');
+        showToast(i18n.error, 'error');
     }
 }
 
@@ -307,9 +313,9 @@ async function toggleUser(userId, enabled) {
 function copySubscription(token) {
     const url = `${baseUrl}/api/files/${token}`;
     navigator.clipboard.writeText(url).then(() => {
-        showToast('📋 Ссылка скопирована');
+        showToast(i18n.linkCopied);
     }).catch(() => {
-        showToast('Ошибка копирования', 'error');
+        showToast(i18n.copyError, 'error');
     });
 }
 
@@ -325,17 +331,14 @@ function showToast(message, type = 'success') {
 function sortBy(field) {
     const params = new URLSearchParams(window.location.search);
     
-    // Если кликнули по текущему полю - меняем направление
     if (currentSortBy === field) {
         const newOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
         params.set('sortOrder', newOrder);
     } else {
-        // Новое поле - сортируем по убыванию по умолчанию
         params.set('sortBy', field);
         params.set('sortOrder', 'desc');
     }
     
-    // Сбрасываем на первую страницу при смене сортировки
     params.set('page', '1');
     
     location.href = '/panel/users?' + params.toString();

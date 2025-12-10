@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="<%= typeof lang !== 'undefined' ? lang : 'ru' %>">
+<html lang="<%= typeof lang !== 'undefined' ? lang : 'en' %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= typeof t !== 'undefined' ? t('auth.loginTitle') : 'Вход' %> | C³ CELERITY</title>
+    <title><%= typeof t !== 'undefined' ? t('auth.loginTitle') : 'Panel Login' %> | C³ CELERITY</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
@@ -29,16 +29,16 @@
             
             <form method="POST" action="/panel/login" class="login-form">
                 <div class="form-group">
-                    <label for="username"><%= typeof t !== 'undefined' ? t('auth.login') : 'Логин' %></label>
+                    <label for="username"><%= typeof t !== 'undefined' ? t('auth.login') : 'Login' %></label>
                     <input type="text" id="username" name="username" 
-                           placeholder="<%= typeof t !== 'undefined' && typeof lang !== 'undefined' && lang === 'en' ? 'Enter login' : 'Введите логин' %>" required autofocus>
+                           placeholder="<%= typeof t !== 'undefined' ? t('auth.enterLogin') : 'Enter login' %>" required autofocus>
                 </div>
                 <div class="form-group">
-                    <label for="password"><%= typeof t !== 'undefined' ? t('auth.password') : 'Пароль' %></label>
+                    <label for="password"><%= typeof t !== 'undefined' ? t('auth.password') : 'Password' %></label>
                     <input type="password" id="password" name="password" 
-                           placeholder="<%= typeof t !== 'undefined' && typeof lang !== 'undefined' && lang === 'en' ? 'Enter password' : 'Введите пароль' %>" required>
+                           placeholder="<%= typeof t !== 'undefined' ? t('auth.enterPassword') : 'Enter password' %>" required>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block"><%= typeof t !== 'undefined' ? t('auth.loginButton') : 'Войти' %></button>
+                <button type="submit" class="btn btn-primary btn-block"><%= typeof t !== 'undefined' ? t('auth.loginButton') : 'Sign In' %></button>
             </form>
         </div>
     </div>

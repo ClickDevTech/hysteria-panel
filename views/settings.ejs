@@ -9,20 +9,20 @@
     <div class="col-6">
         <div class="card">
             <div class="card-header">
-                <h2>Общие настройки</h2>
+                <h2><%= t('settings.general') %></h2>
             </div>
             <div class="card-body">
                 <div class="settings-list">
                     <div class="setting-item">
-                        <label>Base URL</label>
+                        <label><%= t('settings.baseUrl') %></label>
                         <code><%= config.BASE_URL %></code>
                     </div>
                     <div class="setting-item">
-                        <label>Порт</label>
+                        <label><%= t('settings.port') %></label>
                         <code><%= config.PORT %></code>
                     </div>
                     <div class="setting-item">
-                        <label>MongoDB</label>
+                        <label><%= t('settings.mongodb') %></label>
                         <code><%= config.MONGO_URI.replace(/\/\/.*@/, '//***@') %></code>
                     </div>
                 </div>
@@ -31,95 +31,93 @@
         
         <div class="card mt-2">
             <div class="card-header">
-                <h2>⚙️ Настройки системы</h2>
+                <h2><%= t('settings.systemSettings') %></h2>
             </div>
             <div class="card-body">
                 <form method="POST" action="/panel/settings">
                     
-                    <h4 style="margin-bottom: 0.75rem;">⚖️ Балансировка нагрузки</h4>
+                    <h4 style="margin-bottom: 0.75rem;"><%= t('settings.loadBalancing') %></h4>
                     <div class="settings-list" style="margin-bottom: 1.5rem;">
                         <label class="checkbox-label">
                             <input type="checkbox" name="loadBalancing.enabled" 
                                    <%= settings?.loadBalancing?.enabled ? 'checked' : '' %>>
-                            <span>Сортировать по загрузке</span>
+                            <span><%= t('settings.loadBalancingEnabled') %></span>
                         </label>
                         <small class="hint" style="display: block; margin-top: 0.25rem;">
-                            Менее загруженные ноды будут первыми в подписке
+                            <%= t('settings.loadBalancingHint') %>
                         </small>
                         
                         <label class="checkbox-label" style="margin-top: 0.75rem;">
                             <input type="checkbox" name="loadBalancing.hideOverloaded" 
                                    <%= settings?.loadBalancing?.hideOverloaded ? 'checked' : '' %>>
-                            <span>Скрывать перегруженные</span>
+                            <span><%= t('settings.hideOverloaded') %></span>
                         </label>
                         <small class="hint" style="display: block; margin-top: 0.25rem;">
-                            Ноды с онлайн ≥ лимиту не будут включены в подписку
+                            <%= t('settings.hideOverloadedHint') %>
                         </small>
                     </div>
                     
                     <hr style="margin: 1rem 0; border-color: var(--border);">
                     
-                    <h4 style="margin-bottom: 0.75rem;">📱 Лимит устройств</h4>
+                    <h4 style="margin-bottom: 0.75rem;"><%= t('settings.deviceLimit') %></h4>
                     <div class="settings-grid" style="margin-bottom: 1rem;">
                         <div class="form-group">
-                            <label for="deviceGracePeriod">Grace Period (мин)</label>
+                            <label for="deviceGracePeriod"><%= t('settings.gracePeriod') %></label>
                             <input type="number" name="deviceGracePeriod" id="deviceGracePeriod" 
                                    value="<%= settings?.deviceGracePeriod ?? 15 %>" min="1" max="60">
-                            <small class="hint">Как долго помнить IP после отключения. Защищает от ложных срабатываний при смене WiFi↔LTE</small>
+                            <small class="hint"><%= t('settings.gracePeriodHint') %></small>
                         </div>
                     </div>
                     <div class="alert" style="background: var(--bg-tertiary); border: 1px solid var(--border); padding: 12px; font-size: 13px;">
-                        <strong>ℹ️ Как работает:</strong> Устройства считаются по уникальным IP-адресам. 
-                        Если пользователь подключается с нового IP, а старый был активен менее <%= settings?.deviceGracePeriod ?? 15 %> минут назад — 
-                        оба IP учитываются в лимите.
+                        <strong><%= t('settings.howItWorks') %></strong> <%= t('settings.howItWorksDesc').replace('{minutes}', settings?.deviceGracePeriod ?? 15) %>
                     </div>
                     
                     <hr style="margin: 1rem 0; border-color: var(--border);">
                     
-                    <h4 style="margin-bottom: 0.75rem;">🚀 Кэширование (Redis)</h4>
+                    <h4 style="margin-bottom: 0.75rem;"><%= t('settings.caching') %></h4>
                     <div class="settings-grid" style="margin-bottom: 1rem;">
                         <div class="form-group">
-                            <label for="cache.subscriptionTTL">Подписки (сек)</label>
+                            <label for="cache.subscriptionTTL"><%= t('settings.subscriptionsTTL') %></label>
                             <input type="number" name="cache.subscriptionTTL" id="cache.subscriptionTTL" 
                                    value="<%= settings?.cache?.subscriptionTTL || 3600 %>" min="60" max="86400">
-                            <small class="hint">Готовые конфиги. Сбрасывается при изменении нод</small>
+                            <small class="hint"><%= t('settings.subscriptionsTTLHint') %></small>
                         </div>
                         
                         <div class="form-group">
-                            <label for="cache.userTTL">Пользователи (сек)</label>
+                            <label for="cache.userTTL"><%= t('settings.usersTTL') %></label>
                             <input type="number" name="cache.userTTL" id="cache.userTTL" 
                                    value="<%= settings?.cache?.userTTL || 900 %>" min="60" max="3600">
-                            <small class="hint">Авторизация. Сбрасывается при отключении</small>
+                            <small class="hint"><%= t('settings.usersTTLHint') %></small>
                         </div>
                         
                         <div class="form-group">
-                            <label for="cache.onlineSessionsTTL">Онлайн-сессии (сек)</label>
+                            <label for="cache.onlineSessionsTTL"><%= t('settings.onlineSessionsTTL') %></label>
                             <input type="number" name="cache.onlineSessionsTTL" id="cache.onlineSessionsTTL" 
                                    value="<%= settings?.cache?.onlineSessionsTTL || 10 %>" min="5" max="60">
-                            <small class="hint">Для лимита устройств. Меньше = точнее</small>
+                            <small class="hint"><%= t('settings.onlineSessionsTTLHint') %></small>
                         </div>
                         
                         <div class="form-group">
-                            <label for="cache.activeNodesTTL">Активные ноды (сек)</label>
+                            <label for="cache.activeNodesTTL"><%= t('settings.activeNodesTTL') %></label>
                             <input type="number" name="cache.activeNodesTTL" id="cache.activeNodesTTL" 
                                    value="<%= settings?.cache?.activeNodesTTL || 30 %>" min="10" max="300">
-                            <small class="hint">Быстрее реакция на изменения нод</small>
+                            <small class="hint"><%= t('settings.activeNodesTTLHint') %></small>
                         </div>
                     </div>
                     
                     <hr style="margin: 1rem 0; border-color: var(--border);">
                     
-                    <h4 style="margin-bottom: 0.75rem;">🛡️ Rate Limiting</h4>
+                    <h4 style="margin-bottom: 0.75rem;"><%= t('settings.rateLimiting') %></h4>
                     <div class="settings-grid" style="margin-bottom: 1rem;">
                         <div class="form-group">
-                            <label for="rateLimit.subscriptionPerMinute">Подписки/мин на IP</label>
+                            <label for="rateLimit.subscriptionPerMinute"><%= t('settings.subscriptionsPerMinute') %></label>
                             <input type="number" name="rateLimit.subscriptionPerMinute" id="rateLimit.subscriptionPerMinute" 
                                    value="<%= settings?.rateLimit?.subscriptionPerMinute || 100 %>" min="10" max="1000">
-                            <small class="hint">Защита от перебора токенов. Норма: 60-100</small>
+                            <small class="hint"><%= t('settings.subscriptionsPerMinuteHint') %></small>
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary">💾 Сохранить все настройки</button>
+                    <button type="submit" class="btn btn-primary"><%= t('settings.saveAllSettings') %></button>
                 </form>
             </div>
         </div>
@@ -128,57 +126,57 @@
     <div class="col-6">
         <div class="card">
             <div class="card-header">
-                <h2>🔐 Безопасность</h2>
+                <h2><%= t('settings.security') %></h2>
             </div>
             <div class="card-body">
                 <div class="settings-list">
                     <div class="setting-item">
-                        <label>Администратор</label>
+                        <label><%= t('settings.administrator') %></label>
                         <span><%= admin?.username || 'N/A' %></span>
                     </div>
                     <div class="setting-item">
-                        <label>Последний вход</label>
-                        <span><%= admin?.lastLogin ? new Date(admin.lastLogin).toLocaleString('ru-RU') : 'Никогда' %></span>
+                        <label><%= t('settings.lastLogin') %></label>
+                        <span><%= admin?.lastLogin ? new Date(admin.lastLogin).toLocaleString(lang === 'en' ? 'en-US' : 'ru-RU') : t('settings.never') %></span>
                     </div>
                     <div class="setting-item">
-                        <label>IP Whitelist</label>
-                        <span><%= config.PANEL_IP_WHITELIST || 'Отключен (доступ всем)' %></span>
+                        <label><%= t('settings.ipWhitelist') %></label>
+                        <span><%= config.PANEL_IP_WHITELIST || t('settings.ipWhitelistDisabled') %></span>
                     </div>
                 </div>
                 
                 <hr style="margin: 1rem 0; border-color: var(--border);">
                 
-                <h4 style="margin-bottom: 0.5rem;">Смена пароля</h4>
+                <h4 style="margin-bottom: 0.5rem;"><%= t('settings.changePassword') %></h4>
                 <form method="POST" action="/panel/settings/password" class="compact-form">
                     <div class="form-group">
-                        <input type="password" name="currentPassword" placeholder="Текущий пароль" required>
+                        <input type="password" name="currentPassword" placeholder="<%= t('settings.currentPassword') %>" required>
                     </div>
                     <div class="form-group">
-                        <input type="password" name="newPassword" placeholder="Новый пароль (мин. 6 символов)" minlength="6" required>
+                        <input type="password" name="newPassword" placeholder="<%= t('settings.newPassword') %>" minlength="6" required>
                     </div>
                     <div class="form-group">
-                        <input type="password" name="confirmPassword" placeholder="Подтверждение пароля" minlength="6" required>
+                        <input type="password" name="confirmPassword" placeholder="<%= t('settings.confirmPassword') %>" minlength="6" required>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm">Изменить пароль</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><%= t('settings.changePasswordBtn') %></button>
                 </form>
             </div>
         </div>
         
         <div class="card mt-2">
             <div class="card-header">
-                <h2>SSL Сертификат</h2>
+                <h2><%= t('settings.sslCertificate') %></h2>
             </div>
             <div class="card-body">
                 <% if (ssl.enabled) { %>
                 <div class="alert alert-success">
-                    <strong>✅ HTTPS активен</strong>
-                    <p>Домен: <%= ssl.domain %></p>
-                    <p>Let's Encrypt автообновление</p>
+                    <strong><%= t('settings.httpsActive') %></strong>
+                    <p>Domain: <%= ssl.domain %></p>
+                    <p><%= t('settings.letsEncryptAuto') %></p>
                 </div>
                 <% } else { %>
                 <div class="alert alert-warning">
-                    <strong>⚠️ HTTP режим</strong>
-                    <p>Для включения HTTPS задайте переменные:</p>
+                    <strong><%= t('settings.httpMode') %></strong>
+                    <p><%= t('settings.httpModeHint') %></p>
                     <pre>PANEL_DOMAIN=panel.example.com
 ACME_EMAIL=admin@example.com</pre>
                 </div>
@@ -188,7 +186,7 @@ ACME_EMAIL=admin@example.com</pre>
         
         <div class="card mt-2">
             <div class="card-header">
-                <h2>Статус системы</h2>
+                <h2><%= t('settings.systemStatus') %></h2>
             </div>
             <div class="card-body">
                 <div class="settings-list">
@@ -210,16 +208,15 @@ ACME_EMAIL=admin@example.com</pre>
         
         <div class="card mt-2">
             <div class="card-header">
-                <h2>⚠️ Опасная зона</h2>
+                <h2><%= t('settings.dangerZone') %></h2>
             </div>
             <div class="card-body">
-                <h4 style="margin-bottom: 0.5rem;">Сброс счетчика трафика</h4>
+                <h4 style="margin-bottom: 0.5rem;"><%= t('settings.resetTrafficCounter') %></h4>
                 <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 1rem;">
-                    Обнуляет счетчик использованного трафика (tx/rx) для всех пользователей. 
-                    Действие необратимо!
+                    <%= t('settings.resetTrafficDesc') %>
                 </p>
                 <button class="btn btn-danger btn-sm" onclick="resetTraffic()">
-                    🗑️ Сбросить весь трафик
+                    <%= t('settings.resetAllTraffic') %>
                 </button>
             </div>
         </div>
@@ -229,19 +226,27 @@ ACME_EMAIL=admin@example.com</pre>
 <div id="toast" class="toast"></div>
 
 <script>
+const i18n = {
+    resetConfirm: '<%= t("settings.resetConfirm").replace(/\n/g, "\\n") %>',
+    resetConfirmFinal: '<%= t("settings.resetConfirmFinal").replace(/\n/g, "\\n") %>',
+    resetting: '<%= t("settings.resetting") %>',
+    resetAllTraffic: '<%= t("settings.resetAllTraffic") %>',
+    trafficReset: '<%= t("settings.trafficReset") %>',
+    error: '<%= t("common.error") %>'
+};
+
 async function resetTraffic() {
-    if (!confirm('⚠️ ВНИМАНИЕ!\n\nВы уверены что хотите сбросить счетчик трафика для ВСЕХ пользователей?\n\nЭто действие необратимо!')) {
+    if (!confirm(i18n.resetConfirm)) {
         return;
     }
     
-    // Двойное подтверждение
-    if (!confirm('Последнее подтверждение.\n\nСчетчики tx/rx будут обнулены у всех пользователей.\n\nПродолжить?')) {
+    if (!confirm(i18n.resetConfirmFinal)) {
         return;
     }
     
     const btn = event.target;
     btn.disabled = true;
-    btn.textContent = '⏳ Сброс...';
+    btn.textContent = i18n.resetting;
     
     try {
         const res = await fetch('/panel/settings/reset-traffic', {
@@ -252,17 +257,17 @@ async function resetTraffic() {
         const data = await res.json();
         
         if (data.success) {
-            showToast(`✓ Трафик сброшен у ${data.count} пользователей`, 'success');
+            showToast(i18n.trafficReset.replace('{count}', data.count), 'success');
             setTimeout(() => location.reload(), 1500);
         } else {
-            showToast('Ошибка: ' + (data.error || 'unknown'), 'error');
+            showToast(i18n.error + ': ' + (data.error || 'unknown'), 'error');
             btn.disabled = false;
-            btn.textContent = '🗑️ Сбросить весь трафик';
+            btn.textContent = i18n.resetAllTraffic;
         }
     } catch (e) {
-        showToast('Ошибка запроса', 'error');
+        showToast(i18n.error, 'error');
         btn.disabled = false;
-        btn.textContent = '🗑️ Сбросить весь трафик';
+        btn.textContent = i18n.resetAllTraffic;
     }
 }
 
@@ -273,4 +278,3 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.className = 'toast', 3000);
 }
 </script>
-

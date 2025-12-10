@@ -2,41 +2,40 @@
     <div class="stat-card stat-users">
         <div class="stat-header">
             <span class="stat-icon">👥</span>
-            <span class="stat-trend">активных</span>
+            <span class="stat-trend"><%= t('dashboard.activeUsers') %></span>
         </div>
         <div class="stat-value"><%= stats.users.enabled %></div>
-        <div class="stat-label">из <%= stats.users.total %> пользователей</div>
+        <div class="stat-label"><%= t('common.of') %> <%= stats.users.total %> <%= t('nav.users').toLowerCase() %></div>
     </div>
     
     <div class="stat-card stat-nodes">
         <div class="stat-header">
             <span class="stat-icon">🖥️</span>
-            <span class="stat-trend">онлайн</span>
+            <span class="stat-trend"><%= t('dashboard.onlineNodes') %></span>
         </div>
         <div class="stat-value"><%= stats.nodes.online %></div>
-        <div class="stat-label">из <%= stats.nodes.total %> нод</div>
+        <div class="stat-label"><%= t('common.of') %> <%= stats.nodes.total %> <%= t('nav.nodes').toLowerCase() %></div>
     </div>
     
     <div class="stat-card stat-online">
         <div class="stat-header">
             <span class="stat-icon">🌐</span>
-            <span class="stat-trend">сейчас</span>
+            <span class="stat-trend"><%= t('common.now') %></span>
         </div>
         <div class="stat-value" id="onlineCount"><%= stats.onlineUsers %></div>
-        <div class="stat-label">подключений</div>
+        <div class="stat-label"><%= t('common.connections') %></div>
     </div>
     
     <div class="stat-card stat-traffic">
         <div class="stat-header">
             <span class="stat-icon">📊</span>
-            <span class="stat-trend">всего</span>
+            <span class="stat-trend"><%= t('dashboard.total') %></span>
         </div>
         <% 
         const totalGB = (stats.traffic?.total || 0) / (1024 * 1024 * 1024);
         const txGB = (stats.traffic?.tx || 0) / (1024 * 1024 * 1024);
         const rxGB = (stats.traffic?.rx || 0) / (1024 * 1024 * 1024);
         
-        // Форматирование: > 1000 GB = TB
         const formatTraffic = (gb) => {
             if (gb >= 1000) {
                 return (gb / 1024).toFixed(2) + ' TB';
@@ -56,9 +55,9 @@
         <!-- Nodes Status -->
 <div class="card">
     <div class="card-header">
-        <h2>Статус нод</h2>
+        <h2><%= t('dashboard.nodesStatus') %></h2>
                 <div class="header-actions">
-                    <button class="btn btn-sm" onclick="refreshStats()" title="Обновить">🔄</button>
+                    <button class="btn btn-sm" onclick="refreshStats()" title="<%= t('common.refresh') %>">🔄</button>
                 </div>
     </div>
             <div class="card-body no-padding">
@@ -67,19 +66,19 @@
                 <table class="table nodes-table">
             <thead>
                 <tr>
-                            <th>Нода</th>
-                    <th>Статус</th>
-                    <th>Онлайн</th>
-                            <th>Загрузка</th>
-                            <th>Скорость</th>
-                            <th>Действия</th>
+                            <th><%= t('dashboard.node') %></th>
+                    <th><%= t('common.status') %></th>
+                    <th><%= t('common.online') %></th>
+                            <th><%= t('dashboard.load') %></th>
+                            <th><%= t('dashboard.speed') %></th>
+                            <th><%= t('common.actions') %></th>
                 </tr>
             </thead>
             <tbody>
                 <% if (nodes.length === 0) { %>
                 <tr>
                             <td colspan="6" class="text-center text-muted">
-                                <a href="/panel/nodes/add" class="btn btn-primary btn-sm mt-2">Добавить ноду</a>
+                                <a href="/panel/nodes/add" class="btn btn-primary btn-sm mt-2"><%= t('dashboard.addNode') %></a>
                             </td>
                 </tr>
                 <% } %>
@@ -106,9 +105,9 @@
                             </td>
                             <td>
                                 <div class="node-actions">
-                                    <button class="btn-icon" onclick="restartNode('<%= node._id %>')" title="Перезапустить">🔄</button>
-                                    <a href="/panel/nodes/<%= node._id %>" class="btn-icon" title="Настройки">⚙️</a>
-                                    <a href="/panel/nodes/<%= node._id %>/terminal" class="btn-icon" title="Терминал">💻</a>
+                                    <button class="btn-icon" onclick="restartNode('<%= node._id %>')" title="<%= t('nodes.restart') %>">🔄</button>
+                                    <a href="/panel/nodes/<%= node._id %>" class="btn-icon" title="<%= t('common.settings') %>">⚙️</a>
+                                    <a href="/panel/nodes/<%= node._id %>/terminal" class="btn-icon" title="<%= t('nodes.terminal') %>">💻</a>
                                 </div>
                             </td>
                 </tr>
@@ -121,8 +120,8 @@
                 <div class="mobile-nodes-list">
                     <% if (nodes.length === 0) { %>
                         <div style="text-align: center; padding: 40px 20px;">
-                            <p style="color: var(--text-muted); margin-bottom: 16px;">Нет нод</p>
-                            <a href="/panel/nodes/add" class="btn btn-primary btn-sm">Добавить ноду</a>
+                            <p style="color: var(--text-muted); margin-bottom: 16px;"><%= t('dashboard.noNodes') %></p>
+                            <a href="/panel/nodes/add" class="btn btn-primary btn-sm"><%= t('dashboard.addNode') %></a>
                         </div>
                     <% } %>
                     <% nodes.forEach(node => { %>
@@ -139,26 +138,26 @@
                             
                             <div class="mobile-node-stats">
                                 <div class="mobile-stat-item">
-                                    <span class="mobile-stat-label">Онлайн</span>
+                                    <span class="mobile-stat-label"><%= t('common.online') %></span>
                                     <span class="mobile-stat-value online-count"><%= node.onlineUsers || 0 %></span>
                                 </div>
                                 <div class="mobile-stat-item">
-                                    <span class="mobile-stat-label">Статус</span>
+                                    <span class="mobile-stat-label"><%= t('common.status') %></span>
                                     <span class="mobile-stat-value"><%= node.status %></span>
                                 </div>
                                 <div class="mobile-stat-item node-load-mobile" data-nodeid="<%= node._id %>">
-                                    <span class="mobile-stat-label">Загрузка</span>
+                                    <span class="mobile-stat-label"><%= t('dashboard.load') %></span>
                                     <span class="mobile-stat-value load-placeholder">—</span>
                                 </div>
                                 <div class="mobile-stat-item node-speed-mobile" data-nodeid="<%= node._id %>">
-                                    <span class="mobile-stat-label">Скорость</span>
+                                    <span class="mobile-stat-label"><%= t('dashboard.speed') %></span>
                                     <span class="mobile-stat-value load-placeholder">—</span>
                                 </div>
                             </div>
                             
                             <div class="mobile-node-actions">
                                 <button class="btn btn-sm" onclick="restartNode('<%= node._id %>')" style="flex: 1;">🔄 Restart</button>
-                                <a href="/panel/nodes/<%= node._id %>" class="btn btn-sm" style="flex: 1;">⚙️ Настройки</a>
+                                <a href="/panel/nodes/<%= node._id %>" class="btn btn-sm" style="flex: 1;">⚙️ <%= t('common.settings') %></a>
                                 <a href="/panel/nodes/<%= node._id %>/terminal" class="btn-icon">💻</a>
                             </div>
                         </div>
@@ -170,12 +169,12 @@
         <!-- Logs -->
         <div class="card mt-2">
             <div class="card-header">
-                <h2>Логи</h2>
-                <button class="btn btn-sm" onclick="refreshLogs()">Обновить</button>
+                <h2><%= t('dashboard.recentLogs') %></h2>
+                <button class="btn btn-sm" onclick="refreshLogs()"><%= t('common.refresh') %></button>
             </div>
             <div class="card-body no-padding">
                 <div class="logs-container" id="logsContainer">
-                    <div class="logs-loading">Загрузка...</div>
+                    <div class="logs-loading"><%= t('common.loading') %></div>
                 </div>
             </div>
         </div>
@@ -185,29 +184,29 @@
         <!-- Quick Actions -->
         <div class="card">
             <div class="card-header">
-                <h2>Быстрые действия</h2>
+                <h2><%= t('dashboard.quickActions') %></h2>
             </div>
             <div class="card-body">
                 <div class="quick-actions">
                     <a href="/panel/nodes/add" class="quick-action">
                         <span class="qa-icon">➕</span>
-                        <span class="qa-text">Добавить ноду</span>
+                        <span class="qa-text"><%= t('dashboard.addNode') %></span>
                     </a>
                     <a href="/panel/users/add" class="quick-action">
                         <span class="qa-icon">👤</span>
-                        <span class="qa-text">Создать пользователя</span>
+                        <span class="qa-text"><%= t('dashboard.addUser') %></span>
                     </a>
                     <button class="quick-action" onclick="syncAll()">
                         <span class="qa-icon">🔄</span>
-                        <span class="qa-text">Синхронизация</span>
+                        <span class="qa-text"><%= t('common.sync') %></span>
                     </button>
                     <button class="quick-action" onclick="createBackup()">
                         <span class="qa-icon">💾</span>
-                        <span class="qa-text">Backup БД</span>
+                        <span class="qa-text"><%= t('dashboard.backupDb') %></span>
                     </button>
                     <button class="quick-action" onclick="document.getElementById('restoreInput').click()">
                         <span class="qa-icon">📥</span>
-                        <span class="qa-text">Restore БД</span>
+                        <span class="qa-text"><%= t('dashboard.restoreDb') %></span>
                     </button>
                     <input type="file" id="restoreInput" accept=".tar.gz,.tgz" style="display:none" onchange="restoreBackup(this)">
                 </div>
@@ -217,8 +216,8 @@
         <!-- System Info -->
         <div class="card mt-2">
             <div class="card-header">
-                <h2>Панель</h2>
-                <button class="btn btn-sm" onclick="loadSystemStats()" title="Обновить">🔄</button>
+                <h2><%= t('dashboard.panel') %></h2>
+                <button class="btn btn-sm" onclick="loadSystemStats()" title="<%= t('common.refresh') %>">🔄</button>
             </div>
             <div class="card-body">
                 <div class="system-info" id="systemStats">
@@ -306,6 +305,22 @@
 </style>
 
 <script>
+const i18n = {
+    noLogs: '<%= t("dashboard.noLogs") %>',
+    loadError: '<%= t("dashboard.loadError") %>',
+    syncStarted: '<%= t("dashboard.syncStarted") %>',
+    syncSuccess: '<%= t("dashboard.syncSuccess") %>',
+    error: '<%= t("common.error") %>',
+    nodeRestarted: '<%= t("dashboard.nodeRestarted") %>',
+    restartError: '<%= t("dashboard.restartError") %>',
+    creatingBackup: '<%= t("dashboard.creatingBackup") %>',
+    backupDownloaded: '<%= t("dashboard.backupDownloaded") %>',
+    backupError: '<%= t("dashboard.backupError") %>',
+    restoringDb: '<%= t("dashboard.restoringDb") %>',
+    dbRestored: '<%= t("dashboard.dbRestored") %>',
+    restoreConfirm: '<%= t("dashboard.restoreConfirm") %>'
+};
+
 // Load on page load
 document.addEventListener('DOMContentLoaded', () => {
     refreshLogs();
@@ -332,10 +347,10 @@ async function refreshLogs() {
                 return `<div class="${cls}">${escapeHtml(log)}</div>`;
             }).join('');
         } else {
-            container.innerHTML = '<div class="logs-empty">Нет логов</div>';
+            container.innerHTML = '<div class="logs-empty">' + i18n.noLogs + '</div>';
         }
     } catch (e) {
-        document.getElementById('logsContainer').innerHTML = '<div class="logs-error">Ошибка загрузки</div>';
+        document.getElementById('logsContainer').innerHTML = '<div class="logs-error">' + i18n.loadError + '</div>';
     }
 }
 
@@ -384,7 +399,7 @@ async function loadSystemStats() {
             const uptime = data.uptime;
             const hours = Math.floor(uptime / 3600);
             const mins = Math.floor((uptime % 3600) / 60);
-            document.getElementById('uptime').textContent = `${hours}ч ${mins}м`;
+            document.getElementById('uptime').textContent = `${hours}h ${mins}m`;
         }
     } catch (e) {
         console.error('Failed to load system stats:', e);
@@ -404,11 +419,9 @@ async function loadNodesStats() {
             const data = await res.json();
             
             if (data.success) {
-                // Конвертируем load average в проценты: (load / cores) * 100
                 const cpuPercent = Math.min(Math.round((data.cpu.load1 / data.cpu.cores) * 100), 100);
                 const memPercent = data.mem.percent;
                 
-                // Цветовая индикация для CPU
                 let cpuColor = 'var(--text-primary)';
                 if (cpuPercent >= 80) cpuColor = '#ef4444';
                 else if (cpuPercent >= 60) cpuColor = '#f59e0b';
@@ -456,7 +469,6 @@ async function loadNodesStats() {
 }
 
 async function loadNodesSpeed() {
-    // Форматирование скорости
     const formatSpeed = (bytes) => {
         const bits = bytes * 8;
         if (bits < 1000) return `${bits.toFixed(0)} bit/s`;
@@ -529,12 +541,12 @@ async function refreshStats() {
 }
 
 async function syncAll() {
-    showToast('Синхронизация запущена...');
+    showToast(i18n.syncStarted);
     try {
         await fetch('/api/sync', { method: 'POST', credentials: 'include' });
-        showToast('✓ Синхронизация запущена');
+        showToast(i18n.syncSuccess);
     } catch (e) {
-        showToast('Ошибка', 'error');
+        showToast(i18n.error, 'error');
     }
 }
 
@@ -552,14 +564,14 @@ async function restartNode(nodeId) {
         const data = await res.json();
         
         if (data.success) {
-            showToast('✓ Нода перезапущена');
+            showToast(i18n.nodeRestarted);
             row.querySelector('.status-indicator').className = 'status-indicator status-online';
             row.querySelector('.status-indicator').innerHTML = '<span class="status-dot"></span>online';
         } else {
-            showToast('Ошибка: ' + (data.error || 'unknown'), 'error');
+            showToast(i18n.error + ': ' + (data.error || 'unknown'), 'error');
         }
     } catch (e) {
-        showToast('Ошибка перезапуска', 'error');
+        showToast(i18n.restartError, 'error');
     }
     
     btn.disabled = false;
@@ -567,7 +579,7 @@ async function restartNode(nodeId) {
 }
 
 async function createBackup() {
-    showToast('Создание backup...');
+    showToast(i18n.creatingBackup);
     try {
         const res = await fetch('/panel/backup', { 
             method: 'POST', 
@@ -576,11 +588,10 @@ async function createBackup() {
         
         if (!res.ok) {
             const data = await res.json();
-            showToast('Ошибка: ' + (data.error || 'unknown'), 'error');
+            showToast(i18n.error + ': ' + (data.error || 'unknown'), 'error');
             return;
         }
         
-        // Получаем blob и скачиваем
         const blob = await res.blob();
         const contentDisposition = res.headers.get('Content-Disposition');
         let filename = 'backup.tar.gz';
@@ -598,9 +609,9 @@ async function createBackup() {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         
-        showToast('✓ Backup скачан');
+        showToast(i18n.backupDownloaded);
     } catch (e) {
-        showToast('Ошибка backup', 'error');
+        showToast(i18n.backupError, 'error');
     }
 }
 
@@ -608,12 +619,13 @@ async function restoreBackup(input) {
     const file = input.files[0];
     if (!file) return;
     
-    if (!confirm(`Восстановить базу данных из "${file.name}"?\n\n⚠️ Текущие данные будут заменены!`)) {
+    const confirmMsg = i18n.restoreConfirm.replace('{filename}', file.name);
+    if (!confirm(confirmMsg)) {
         input.value = '';
         return;
     }
     
-    showToast('Восстановление БД...');
+    showToast(i18n.restoringDb);
     
     const formData = new FormData();
     formData.append('backup', file);
@@ -627,13 +639,13 @@ async function restoreBackup(input) {
         const data = await res.json();
         
         if (data.success) {
-            showToast('✓ БД восстановлена! Перезагрузка...');
+            showToast(i18n.dbRestored);
             setTimeout(() => location.reload(), 1500);
         } else {
-            showToast('Ошибка: ' + (data.error || 'unknown'), 'error');
+            showToast(i18n.error + ': ' + (data.error || 'unknown'), 'error');
         }
     } catch (e) {
-        showToast('Ошибка restore', 'error');
+        showToast(i18n.error + ' restore', 'error');
     }
     
     input.value = '';

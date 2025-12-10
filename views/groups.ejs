@@ -1,43 +1,43 @@
 <div class="page-header">
-    <h1>Группы серверов</h1>
-    <p class="hint">Группы позволяют гибко управлять доступом пользователей к серверам</p>
+    <h1><%= t('groups.title') %></h1>
+    <p class="hint"><%= t('groups.pageHint') %></p>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h2>➕ Создать группу</h2>
+        <h2><%= t('groups.addGroup') %></h2>
     </div>
     <div class="card-body">
         <form method="POST" action="/panel/groups" class="form-inline">
             <div class="form-row">
                 <div class="form-group" style="flex: 2;">
-                    <input type="text" name="name" placeholder="Название группы" required>
+                    <input type="text" name="name" placeholder="<%= t('groups.groupNamePlaceholder') %>" required>
                 </div>
                 <div class="form-group" style="flex: 2;">
-                    <input type="text" name="subscriptionTitle" placeholder="Название в приложении" title="Отображается в приложениях клиентов">
+                    <input type="text" name="subscriptionTitle" placeholder="<%= t('groups.subscriptionTitlePlaceholder') %>" title="<%= t('groups.subscriptionTitleHint') %>">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <input type="number" name="maxDevices" placeholder="0" min="0" value="0" title="Лимит устройств (0 = безлимит)">
+                    <input type="number" name="maxDevices" placeholder="<%= t('groups.maxDevicesPlaceholder') %>" min="0" value="0" title="<%= t('groups.maxDevicesHint') %>">
                 </div>
                 <div class="form-group" style="flex: 0.5;">
-                    <input type="color" name="color" value="#6366f1" title="Цвет группы">
+                    <input type="color" name="color" value="#6366f1" title="<%= t('groups.colorHint') %>">
                 </div>
-                <button type="submit" class="btn btn-primary">Создать</button>
+                <button type="submit" class="btn btn-primary"><%= t('groups.createGroup') %></button>
             </div>
-            <small class="hint">Название в приложении — отображается в списке подписок у клиентов. Лимит устройств = 0 означает без лимита.</small>
+            <small class="hint"><%= t('groups.formHint') %></small>
         </form>
     </div>
 </div>
 
 <div class="card mt-2">
     <div class="card-header">
-        <h2>📋 Все группы (<%= groups.length %>)</h2>
+        <h2><%= t('groups.allGroups') %> (<%= groups.length %>)</h2>
     </div>
     <div class="card-body">
         <% if (groups.length === 0) { %>
             <div class="empty-state">
-                <p>Групп пока нет. Создайте первую группу выше.</p>
-                <p class="hint">Группы помогают организовать серверы по регионам, тарифам или другим критериям.</p>
+                <p><%= t('groups.noGroups') %></p>
+                <p class="hint"><%= t('groups.noGroupsHint') %></p>
             </div>
         <% } else { %>
             <div class="groups-grid">
@@ -50,28 +50,28 @@
                             </div>
                             
                             <div class="group-stats">
-                                <span class="stat">🖥️ <%= group.nodesCount || 0 %> нод</span>
-                                <span class="stat">👥 <%= group.usersCount || 0 %> пользователей</span>
-                                <span class="stat" title="Лимит устройств">📱 <%= group.maxDevices || '∞' %></span>
+                                <span class="stat">🖥️ <%= group.nodesCount || 0 %> <%= t('groups.nodesCount') %></span>
+                                <span class="stat">👥 <%= group.usersCount || 0 %> <%= t('groups.usersCount') %></span>
+                                <span class="stat" title="<%= t('groups.maxDevices') %>">📱 <%= group.maxDevices || '∞' %></span>
                             </div>
                             
                             <div class="form-row-inline">
-                                <input type="text" name="subscriptionTitle" value="<%= group.subscriptionTitle || '' %>" placeholder="Название в приложении" class="group-description" style="flex: 2;" title="Отображается в приложениях клиентов">
-                                <input type="number" name="maxDevices" value="<%= group.maxDevices || 0 %>" min="0" placeholder="Устройства" class="group-devices" style="flex: 1;" title="Лимит устройств (0 = безлимит)">
+                                <input type="text" name="subscriptionTitle" value="<%= group.subscriptionTitle || '' %>" placeholder="<%= t('groups.subscriptionTitlePlaceholder') %>" class="group-description" style="flex: 2;" title="<%= t('groups.subscriptionTitleHint') %>">
+                                <input type="number" name="maxDevices" value="<%= group.maxDevices || 0 %>" min="0" placeholder="<%= t('groups.maxDevices') %>" class="group-devices" style="flex: 1;" title="<%= t('groups.maxDevicesHint') %>">
                             </div>
                             
                             <div class="group-actions">
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="active" <%= group.active !== false ? 'checked' : '' %>>
-                                    <span>Активна</span>
+                                    <span><%= t('groups.isActive') %></span>
                                 </label>
                                 <div class="btn-group">
-                                    <button type="submit" class="btn btn-sm btn-secondary">Сохранить</button>
+                                    <button type="submit" class="btn btn-sm btn-secondary"><%= t('groups.save') %></button>
                                 </div>
                             </div>
                         </form>
                         
-                        <form method="POST" action="/panel/groups/<%= group._id %>/delete" class="delete-form" onsubmit="return confirm('Удалить группу <%= group.name %>? Она будет отвязана от всех нод и пользователей.')">
+                        <form method="POST" action="/panel/groups/<%= group._id %>/delete" class="delete-form" onsubmit="return confirm('<%= t('groups.confirmDelete').replace('{name}', group.name) %>')">
                             <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
                         </form>
                     </div>
@@ -186,4 +186,3 @@
     color: var(--muted);
 }
 </style>
-

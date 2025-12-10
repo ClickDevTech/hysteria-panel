@@ -1,29 +1,29 @@
 <div class="page-header">
-    <a href="/panel/users" class="btn btn-back">← Назад к списку</a>
+    <a href="/panel/users" class="btn btn-back"><%= t('common.backToList') %></a>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h2>Новый пользователь</h2>
+        <h2><%= t('users.newUser') %></h2>
     </div>
     <div class="card-body">
         <form method="POST" action="/panel/users" class="form">
             <div class="form-row">
                 <div class="form-group">
-                    <label for="userId">User ID *</label>
-                    <input type="text" id="userId" name="userId" placeholder="Telegram ID или уникальный ID" required>
-                    <small>Уникальный идентификатор пользователя</small>
+                    <label for="userId"><%= t('users.userId') %></label>
+                    <input type="text" id="userId" name="userId" placeholder="<%= t('users.userIdPlaceholder') %>" required>
+                    <small><%= t('users.userIdHint') %></small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" placeholder="@username">
-                    <small>Опционально, для отображения</small>
+                    <label for="username"><%= t('users.username') %></label>
+                    <input type="text" id="username" name="username" placeholder="<%= t('users.usernamePlaceholder') %>">
+                    <small><%= t('users.usernameHint') %></small>
                 </div>
             </div>
             
                 <div class="form-group">
-                <label>Группы серверов</label>
+                <label><%= t('users.groups') %></label>
                 <div class="groups-select">
                     <% if (groups && groups.length > 0) { %>
                         <% groups.forEach(group => { %>
@@ -34,45 +34,43 @@
                             </label>
                         <% }); %>
                     <% } else { %>
-                        <p class="hint">Нет групп. <a href="/panel/groups">Создайте группу</a></p>
+                        <p class="hint"><%= t('nodes.noGroups') %> <a href="/panel/groups"><%= t('nodes.createGroup') %></a></p>
                     <% } %>
                 </div>
-                <small>Пользователь получит доступ к нодам из этих групп. Если не выбрано — доступ ко всем нодам без групп.</small>
+                <small><%= t('users.groupsHint') %></small>
                 </div>
                 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="trafficLimit">Лимит трафика (ГБ)</label>
+                    <label for="trafficLimit"><%= t('users.trafficLimit') %></label>
                     <input type="number" id="trafficLimit" name="trafficLimitGB" placeholder="0" value="0" min="0">
-                    <small>0 = без ограничений</small>
+                    <small><%= t('users.trafficLimitHint') %></small>
             </div>
             
                     <div class="form-group">
-                    <label for="maxDevices">Лимит устройств</label>
+                    <label for="maxDevices"><%= t('users.maxDevices') %></label>
                     <input type="number" id="maxDevices" name="maxDevices" placeholder="0" value="0" min="-1">
-                    <small>0 = лимит группы, -1 = безлимит</small>
+                    <small><%= t('users.maxDevicesHint') %></small>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="expireDays">Срок действия (дней)</label>
+                <label for="expireDays"><%= t('users.expireDays') %></label>
                 <input type="number" id="expireDays" name="expireDays" placeholder="30" value="30" min="0">
-                <small>0 = бессрочно</small>
+                <small><%= t('users.expireDaysHint') %></small>
             </div>
             
             <div class="form-group">
                 <label class="checkbox-label">
                     <input type="checkbox" name="enabled" checked>
-                    Активировать сразу
+                    <%= t('users.activateNow') %>
                 </label>
             </div>
             
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Создать пользователя</button>
-                <a href="/panel/users" class="btn">Отмена</a>
+                <button type="submit" class="btn btn-primary"><%= t('users.createUser') %></button>
+                <a href="/panel/users" class="btn"><%= t('common.cancel') %></a>
             </div>
         </form>
     </div>
 </div>
-
-
