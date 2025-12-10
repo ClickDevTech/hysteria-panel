@@ -221,7 +221,7 @@ router.post('/setup', async (req, res) => {
         // Создаём админа
         await Admin.createAdmin(username, password);
         
-        logger.info(`[Panel] Создан администратор: ${username}`);
+        logger.info(`[Panel] Administrator created: ${username}`);
         
         // Авторизуем сразу
         req.session.authenticated = true;
@@ -229,7 +229,7 @@ router.post('/setup', async (req, res) => {
         
         res.redirect('/panel');
     } catch (error) {
-        logger.error('[Panel] Ошибка создания админа:', error.message);
+        logger.error('[Panel] Admin creation error:', error.message);
         res.render('setup', { error: 'Ошибка: ' + error.message });
     }
 });
@@ -250,11 +250,11 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (admin) {
         req.session.authenticated = true;
         req.session.adminUsername = admin.username;
-        logger.info(`[Panel] Успешный вход: ${admin.username} с IP: ${req.ip}`);
+        logger.info(`[Panel] Successful login: ${admin.username} from IP: ${req.ip}`);
         return res.redirect('/panel');
     }
     
-    logger.warn(`[Panel] Неудачная попытка входа: ${username} с IP: ${req.ip}`);
+    logger.warn(`[Panel] Failed login attempt: ${username} from IP: ${req.ip}`);
     res.render('login', { error: 'Неверный логин или пароль' });
 });
 
@@ -263,7 +263,7 @@ router.get('/logout', (req, res) => {
     const username = req.session?.adminUsername;
     req.session.destroy();
     if (username) {
-        logger.info(`[Panel] Выход: ${username}`);
+        logger.info(`[Panel] Logout: ${username}`);
     }
     res.redirect('/panel/login');
 });
@@ -944,11 +944,11 @@ router.post('/settings', requireAuth, async (req, res) => {
         await invalidateSettingsCache();
         await reloadSettings();
         
-        logger.info(`[Panel] Настройки обновлены`);
+        logger.info(`[Panel] Settings updated`);
         
         res.redirect('/panel/settings?message=' + encodeURIComponent('Настройки сохранены'));
     } catch (error) {
-        logger.error('[Panel] Ошибка сохранения настроек:', error.message);
+        logger.error('[Panel] Settings save error:', error.message);
         res.redirect('/panel/settings?error=' + encodeURIComponent('Ошибка: ' + error.message));
     }
 });
@@ -980,11 +980,11 @@ router.post('/settings/password', requireAuth, async (req, res) => {
         // Меняем пароль
         await Admin.changePassword(req.session.adminUsername, newPassword);
         
-        logger.info(`[Panel] Пароль изменён для: ${req.session.adminUsername}`);
+        logger.info(`[Panel] Password changed for: ${req.session.adminUsername}`);
         
         res.redirect('/panel/settings?message=' + encodeURIComponent('Пароль успешно изменён'));
     } catch (error) {
-        logger.error('[Panel] Ошибка смены пароля:', error.message);
+        logger.error('[Panel] Password change error:', error.message);
         res.redirect('/panel/settings?error=' + encodeURIComponent('Ошибка: ' + error.message));
     }
 });
@@ -1004,7 +1004,7 @@ router.post('/settings/reset-traffic', requireAuth, async (req, res) => {
             }
         );
         
-        logger.warn(`[Panel] Трафик сброшен для ${result.modifiedCount} пользователей админом: ${req.session.adminUsername}`);
+        logger.warn(`[Panel] Traffic reset for ${result.modifiedCount} users by admin: ${req.session.adminUsername}`);
         
         // Инвалидируем кэш всех пользователей
         const users = await HyUser.find({}).select('userId subscriptionToken').lean();
@@ -1025,7 +1025,7 @@ router.post('/settings/reset-traffic', requireAuth, async (req, res) => {
             message: `Трафик сброшен у ${result.modifiedCount} пользователей`
         });
     } catch (error) {
-        logger.error('[Panel] Ошибка сброса трафика:', error.message);
+        logger.error('[Panel] Traffic reset error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1159,7 +1159,7 @@ router.get('/logs', requireAuth, async (req, res) => {
         
         res.json({ logs });
     } catch (error) {
-        logger.error(`[Panel] Ошибка чтения логов: ${error.message}`);
+        logger.error(`[Panel] Logs read error: ${error.message}`);
         res.json({ logs: [], error: error.message });
     }
 });
@@ -1182,23 +1182,23 @@ router.post('/backup', requireAuth, async (req, res) => {
         const dumpCmd = `mongodump --uri="${mongoUri}" --out="${backupPath}" --gzip`;
         
         await execAsync(dumpCmd);
-        logger.info(`[Backup] Создан dump: ${backupPath}`);
+        logger.info(`[Backup] Dump created: ${backupPath}`);
         
         // Создаём tar.gz архив
         const tarCmd = `cd "${backupDir}" && tar -czf "${backupName}.tar.gz" "${backupName}" && rm -rf "${backupName}"`;
         await execAsync(tarCmd);
-        logger.info(`[Backup] Создан архив: ${archivePath}`);
+        logger.info(`[Backup] Archive created: ${archivePath}`);
         
         // Отдаём файл на скачивание
         res.download(archivePath, `${backupName}.tar.gz`, (err) => {
             // Удаляем файл после скачивания (опционально, можно оставить)
             // fs.unlinkSync(archivePath);
             if (err) {
-                logger.error(`[Backup] Ошибка отправки: ${err.message}`);
+                logger.error(`[Backup] Send error: ${err.message}`);
             }
         });
     } catch (error) {
-        logger.error(`[Backup] Ошибка: ${error.message}`);
+        logger.error(`[Backup] Error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -1218,7 +1218,7 @@ router.post('/restore', requireAuth, backupUpload.single('backup'), async (req, 
         
         // Распаковываем архив
         await execAsync(`tar -xzf "${uploadedFile}" -C "${extractDir}"`);
-        logger.info(`[Restore] Архив распакован в ${extractDir}`);
+        logger.info(`[Restore] Archive extracted to ${extractDir}`);
         
         // Ищем папку с дампом (может быть вложенность hysteria-backup-xxx/hysteria/)
         const findDumpPath = (dir) => {
@@ -1238,25 +1238,25 @@ router.post('/restore', requireAuth, backupUpload.single('backup'), async (req, 
         };
         
         const dumpPath = findDumpPath(extractDir);
-        logger.info(`[Restore] Путь к дампу: ${dumpPath}`);
+        logger.info(`[Restore] Dump path: ${dumpPath}`);
         
         // Проверяем что там есть папка hysteria
         const dumpContents = fs.readdirSync(dumpPath);
-        logger.info(`[Restore] Содержимое дампа: ${dumpContents.join(', ')}`);
+        logger.info(`[Restore] Dump contents: ${dumpContents.join(', ')}`);
         
         // mongorestore - указываем путь к папке базы данных
         const mongoUri = config.MONGO_URI;
         const hysteriaDir = path.join(dumpPath, 'hysteria');
         const restoreCmd = `mongorestore --uri="${mongoUri}" --drop --gzip --db=hysteria "${hysteriaDir}"`;
         
-        logger.info(`[Restore] Папка БД: ${hysteriaDir}`);
-        logger.info(`[Restore] Команда: ${restoreCmd.replace(mongoUri, 'MONGO_URI')}`);
+        logger.info(`[Restore] DB folder: ${hysteriaDir}`);
+        logger.info(`[Restore] Command: ${restoreCmd.replace(mongoUri, 'MONGO_URI')}`);
         
         const { stdout, stderr } = await execAsync(restoreCmd);
         if (stdout) logger.info(`[Restore] stdout: ${stdout}`);
         if (stderr) logger.info(`[Restore] stderr: ${stderr}`);
         
-        logger.info(`[Restore] ✅ База данных восстановлена`);
+        logger.info(`[Restore] ✅ Database restored`);
         
         // Удаляем временные файлы
         fs.unlinkSync(uploadedFile);
@@ -1264,7 +1264,7 @@ router.post('/restore', requireAuth, backupUpload.single('backup'), async (req, 
         
         res.json({ success: true, message: 'База данных успешно восстановлена' });
     } catch (error) {
-        logger.error(`[Restore] Ошибка: ${error.message}`);
+        logger.error(`[Restore] Error: ${error.message}`);
         if (error.stdout) logger.error(`[Restore] stdout: ${error.stdout}`);
         if (error.stderr) logger.error(`[Restore] stderr: ${error.stderr}`);
         

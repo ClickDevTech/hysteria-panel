@@ -114,7 +114,7 @@ router.get('/', async (req, res) => {
             }
         });
     } catch (error) {
-        logger.error(`[Users API] Ошибка получения списка: ${error.message}`);
+        logger.error(`[Users API] List error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -134,7 +134,7 @@ router.get('/:userId', async (req, res) => {
         
         res.json(user);
     } catch (error) {
-        logger.error(`[Users API] Ошибка получения пользователя: ${error.message}`);
+        logger.error(`[Users API] Get user error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -176,11 +176,11 @@ router.post('/', async (req, res) => {
         
         await user.save();
         
-        logger.info(`[Users API] Создан пользователь ${userId}, groups: ${userGroups.length}`);
+        logger.info(`[Users API] Created user ${userId}, groups: ${userGroups.length}`);
         
         res.status(201).json(user);
     } catch (error) {
-        logger.error(`[Users API] Ошибка создания пользователя: ${error.message}`);
+        logger.error(`[Users API] Create user error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -230,11 +230,11 @@ router.put('/:userId', async (req, res) => {
         // Инвалидируем кэш
         await invalidateUserCache(req.params.userId, user.subscriptionToken);
         
-        logger.info(`[Users API] Обновлён пользователь ${req.params.userId}`);
+        logger.info(`[Users API] Updated user ${req.params.userId}`);
         
         res.json(updatedUser);
     } catch (error) {
-        logger.error(`[Users API] Ошибка обновления: ${error.message}`);
+        logger.error(`[Users API] Update error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -253,11 +253,11 @@ router.delete('/:userId', async (req, res) => {
         // Инвалидируем кэш
         await invalidateUserCache(req.params.userId, user.subscriptionToken);
         
-        logger.info(`[Users API] Удалён пользователь ${req.params.userId}`);
+        logger.info(`[Users API] Deleted user ${req.params.userId}`);
         
         res.json({ success: true, message: 'Пользователь удалён' });
     } catch (error) {
-        logger.error(`[Users API] Ошибка удаления: ${error.message}`);
+        logger.error(`[Users API] Delete error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -280,7 +280,7 @@ router.post('/:userId/enable', async (req, res) => {
         // Инвалидируем кэш
         await invalidateUserCache(req.params.userId, user.subscriptionToken);
         
-        logger.info(`[Users API] Включён пользователь ${req.params.userId}`);
+        logger.info(`[Users API] Enabled user ${req.params.userId}`);
         res.json(user);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -305,7 +305,7 @@ router.post('/:userId/disable', async (req, res) => {
         // Инвалидируем кэш
         await invalidateUserCache(req.params.userId, user.subscriptionToken);
         
-        logger.info(`[Users API] Отключён пользователь ${req.params.userId}`);
+        logger.info(`[Users API] Disabled user ${req.params.userId}`);
         res.json(user);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -337,7 +337,7 @@ router.post('/:userId/groups', async (req, res) => {
         // Инвалидируем кэш
         await invalidateUserCache(req.params.userId, user.subscriptionToken);
         
-        logger.info(`[Users API] Добавлены группы пользователю ${req.params.userId}`);
+        logger.info(`[Users API] Added groups to user ${req.params.userId}`);
         res.json(user);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -362,7 +362,7 @@ router.delete('/:userId/groups/:groupId', async (req, res) => {
         // Инвалидируем кэш
         await invalidateUserCache(req.params.userId, user.subscriptionToken);
         
-        logger.info(`[Users API] Удалена группа ${req.params.groupId} у пользователя ${req.params.userId}`);
+        logger.info(`[Users API] Removed group ${req.params.groupId} from user ${req.params.userId}`);
         res.json(user);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -421,16 +421,16 @@ router.post('/sync-from-main', async (req, res) => {
                     created++;
                 }
             } catch (err) {
-                logger.error(`[Sync] Ошибка для userId ${userData.userId}: ${err.message}`);
+                logger.error(`[Sync] Error for userId ${userData.userId}: ${err.message}`);
                 errors++;
             }
         }
         
-        logger.info(`[Sync] Синхронизация: создано ${created}, обновлено ${updated}, ошибок ${errors}`);
+        logger.info(`[Sync] Sync: created ${created}, updated ${updated}, errors ${errors}`);
         
         res.json({ created, updated, errors });
     } catch (error) {
-        logger.error(`[Sync] Ошибка синхронизации: ${error.message}`);
+        logger.error(`[Sync] Sync error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });

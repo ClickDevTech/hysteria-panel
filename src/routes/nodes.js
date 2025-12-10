@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
         
         res.json(nodes);
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка получения списка: ${error.message}`);
+        logger.error(`[Nodes API] List error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -65,7 +65,7 @@ router.get('/:id', async (req, res) => {
             userCount,
         });
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка получения ноды: ${error.message}`);
+        logger.error(`[Nodes API] Get node error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -115,11 +115,11 @@ router.post('/', async (req, res) => {
         // Инвалидируем кэш
         await invalidateNodesCache();
         
-        logger.info(`[Nodes API] Создана нода ${name} (${ip})`);
+        logger.info(`[Nodes API] Created node ${name} (${ip})`);
         
         res.status(201).json(node);
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка создания ноды: ${error.message}`);
+        logger.error(`[Nodes API] Create node error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -154,11 +154,11 @@ router.put('/:id', async (req, res) => {
         // Инвалидируем кэш
         await invalidateNodesCache();
         
-        logger.info(`[Nodes API] Обновлена нода ${node.name}`);
+        logger.info(`[Nodes API] Updated node ${node.name}`);
         
         res.json(node);
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка обновления: ${error.message}`);
+        logger.error(`[Nodes API] Update error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -183,11 +183,11 @@ router.delete('/:id', async (req, res) => {
         // Инвалидируем кэш
         await invalidateNodesCache();
         
-        logger.info(`[Nodes API] Удалена нода ${node.name}`);
+        logger.info(`[Nodes API] Deleted node ${node.name}`);
         
         res.json({ success: true, message: 'Нода удалена' });
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка удаления: ${error.message}`);
+        logger.error(`[Nodes API] Delete error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -211,7 +211,7 @@ router.get('/:id/status', async (req, res) => {
             lastSync: node.lastSync,
         });
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка получения статуса: ${error.message}`);
+        logger.error(`[Nodes API] Get status error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -231,11 +231,11 @@ router.post('/:id/reset-status', async (req, res) => {
             return res.status(404).json({ error: 'Нода не найдена' });
         }
         
-        logger.info(`[Nodes API] Статус ноды ${node.name} сброшен на online`);
+        logger.info(`[Nodes API] Node ${node.name} status reset to online`);
         
         res.json({ success: true, message: 'Статус сброшен', node });
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка сброса статуса: ${error.message}`);
+        logger.error(`[Nodes API] Status reset error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -255,11 +255,11 @@ router.post('/:id/sync', async (req, res) => {
             return res.status(404).json({ error: 'Нода не найдена' });
         }
         
-        logger.info(`[Nodes API] Запущена синхронизация ноды ${node.name}`);
+        logger.info(`[Nodes API] Started sync for node ${node.name}`);
         
         res.json({ success: true, message: 'Синхронизация запущена' });
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка запуска синхронизации: ${error.message}`);
+        logger.error(`[Nodes API] Start sync error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -282,7 +282,7 @@ router.get('/:id/users', async (req, res) => {
         
         res.json(users);
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка получения пользователей: ${error.message}`);
+        logger.error(`[Nodes API] Get users error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });
@@ -311,7 +311,7 @@ router.post('/:id/groups', async (req, res) => {
         // Инвалидируем кэш
         await invalidateNodesCache();
         
-        logger.info(`[Nodes API] Добавлены группы для ноды ${node.name}`);
+        logger.info(`[Nodes API] Added groups for node ${node.name}`);
         res.json(node);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -336,7 +336,7 @@ router.delete('/:id/groups/:groupId', async (req, res) => {
         // Инвалидируем кэш
         await invalidateNodesCache();
         
-        logger.info(`[Nodes API] Удалена группа ${req.params.groupId} у ноды ${node.name}`);
+        logger.info(`[Nodes API] Removed group ${req.params.groupId} from node ${node.name}`);
         res.json(node);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -365,7 +365,7 @@ router.get('/:id/config', async (req, res) => {
         
         res.type('text/yaml').send(configContent);
     } catch (error) {
-        logger.error(`[Nodes API] Ошибка генерации конфига: ${error.message}`);
+        logger.error(`[Nodes API] Config generation error: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 });

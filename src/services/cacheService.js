@@ -64,7 +64,7 @@ class CacheService {
             GROUPS: DEFAULT_TTL.GROUPS, // Всегда фиксированный
             DASHBOARD_COUNTS: DEFAULT_TTL.DASHBOARD_COUNTS, // Всегда фиксированный
         };
-        logger.info(`[Cache] TTL обновлены: sub=${this.ttl.SUBSCRIPTION}s, user=${this.ttl.USER}s`);
+        logger.info(`[Cache] TTL updated: sub=${this.ttl.SUBSCRIPTION}s, user=${this.ttl.USER}s`);
     }
 
     /**
@@ -82,23 +82,23 @@ class CacheService {
 
             this.redis.on('connect', () => {
                 this.connected = true;
-                logger.info('✅ Redis подключен');
+                logger.info('✅ Redis connected');
             });
 
             this.redis.on('error', (err) => {
-                logger.error(`[Redis] Ошибка: ${err.message}`);
+                logger.error(`[Redis] Error: ${err.message}`);
                 this.connected = false;
             });
 
             this.redis.on('close', () => {
                 this.connected = false;
-                logger.warn('[Redis] Соединение закрыто');
+                logger.warn('[Redis] Connection closed');
             });
 
             await this.redis.connect();
             
         } catch (err) {
-            logger.error(`[Redis] Не удалось подключиться: ${err.message}`);
+            logger.error(`[Redis] Failed to connect: ${err.message}`);
             this.connected = false;
         }
     }
@@ -127,7 +127,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getSubscription: ${err.message}`);
+            logger.error(`[Cache] getSubscription error: ${err.message}`);
             return null;
         }
     }
@@ -143,7 +143,7 @@ class CacheService {
             await this.redis.setex(key, this.ttl.SUBSCRIPTION, JSON.stringify(data));
             logger.debug(`[Cache] SET subscription: ${token}:${format}`);
         } catch (err) {
-            logger.error(`[Cache] Ошибка setSubscription: ${err.message}`);
+            logger.error(`[Cache] setSubscription error: ${err.message}`);
         }
     }
 
@@ -163,7 +163,7 @@ class CacheService {
                 logger.debug(`[Cache] INVALIDATE subscription: ${token} (${keysToDelete.length} keys)`);
             }
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateSubscription: ${err.message}`);
+            logger.error(`[Cache] invalidateSubscription error: ${err.message}`);
         }
     }
 
@@ -188,7 +188,7 @@ class CacheService {
                 logger.info(`[Cache] INVALIDATE all subscriptions (${keysToDelete.length} keys)`);
             }
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateAllSubscriptions: ${err.message}`);
+            logger.error(`[Cache] invalidateAllSubscriptions error: ${err.message}`);
         }
     }
     
@@ -227,7 +227,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getUser: ${err.message}`);
+            logger.error(`[Cache] getUser error: ${err.message}`);
             return null;
         }
     }
@@ -247,7 +247,7 @@ class CacheService {
             await this.redis.setex(key, this.ttl.USER, JSON.stringify(safeData));
             logger.debug(`[Cache] SET user: ${userId}`);
         } catch (err) {
-            logger.error(`[Cache] Ошибка setUser: ${err.message}`);
+            logger.error(`[Cache] setUser error: ${err.message}`);
         }
     }
 
@@ -262,7 +262,7 @@ class CacheService {
             await this.redis.del(key);
             logger.debug(`[Cache] INVALIDATE user: ${userId}`);
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateUser: ${err.message}`);
+            logger.error(`[Cache] invalidateUser error: ${err.message}`);
         }
     }
 
@@ -281,7 +281,7 @@ class CacheService {
             const data = await this.redis.hgetall(key);
             return data || {};
         } catch (err) {
-            logger.error(`[Cache] Ошибка getDeviceIPs: ${err.message}`);
+            logger.error(`[Cache] getDeviceIPs error: ${err.message}`);
             return {};
         }
     }
@@ -300,7 +300,7 @@ class CacheService {
             // Устанавливаем TTL на весь ключ (автоочистка неактивных юзеров)
             await this.redis.expire(key, 86400); // 24 часа
         } catch (err) {
-            logger.error(`[Cache] Ошибка updateDeviceIP: ${err.message}`);
+            logger.error(`[Cache] updateDeviceIP error: ${err.message}`);
         }
     }
 
@@ -329,7 +329,7 @@ class CacheService {
                 logger.debug(`[Cache] Cleaned ${toDelete.length} old IPs for ${userId}`);
             }
         } catch (err) {
-            logger.error(`[Cache] Ошибка cleanupOldDeviceIPs: ${err.message}`);
+            logger.error(`[Cache] cleanupOldDeviceIPs error: ${err.message}`);
         }
     }
 
@@ -345,7 +345,7 @@ class CacheService {
             await this.redis.del(key);
             logger.debug(`[Cache] Cleared devices for ${userId}`);
         } catch (err) {
-            logger.error(`[Cache] Ошибка clearDeviceIPs: ${err.message}`);
+            logger.error(`[Cache] clearDeviceIPs error: ${err.message}`);
         }
     }
 
@@ -365,7 +365,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getOnlineSessions: ${err.message}`);
+            logger.error(`[Cache] getOnlineSessions error: ${err.message}`);
             return null;
         }
     }
@@ -380,7 +380,7 @@ class CacheService {
         try {
             await this.redis.setex(PREFIX.ONLINE, this.ttl.ONLINE_SESSIONS, JSON.stringify(data));
         } catch (err) {
-            logger.error(`[Cache] Ошибка setOnlineSessions: ${err.message}`);
+            logger.error(`[Cache] setOnlineSessions error: ${err.message}`);
         }
     }
 
@@ -400,7 +400,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getActiveNodes: ${err.message}`);
+            logger.error(`[Cache] getActiveNodes error: ${err.message}`);
             return null;
         }
     }
@@ -415,7 +415,7 @@ class CacheService {
             await this.redis.setex(PREFIX.NODES, this.ttl.ACTIVE_NODES, JSON.stringify(nodes));
             logger.debug('[Cache] SET active nodes');
         } catch (err) {
-            logger.error(`[Cache] Ошибка setActiveNodes: ${err.message}`);
+            logger.error(`[Cache] setActiveNodes error: ${err.message}`);
         }
     }
 
@@ -429,7 +429,7 @@ class CacheService {
             await this.redis.del(PREFIX.NODES);
             logger.debug('[Cache] INVALIDATE nodes');
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateNodes: ${err.message}`);
+            logger.error(`[Cache] invalidateNodes error: ${err.message}`);
         }
     }
 
@@ -448,7 +448,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getSettings: ${err.message}`);
+            logger.error(`[Cache] getSettings error: ${err.message}`);
             return null;
         }
     }
@@ -462,7 +462,7 @@ class CacheService {
         try {
             await this.redis.setex(PREFIX.SETTINGS, this.ttl.SETTINGS, JSON.stringify(settings));
         } catch (err) {
-            logger.error(`[Cache] Ошибка setSettings: ${err.message}`);
+            logger.error(`[Cache] setSettings error: ${err.message}`);
         }
     }
 
@@ -475,7 +475,7 @@ class CacheService {
         try {
             await this.redis.del(PREFIX.SETTINGS);
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateSettings: ${err.message}`);
+            logger.error(`[Cache] invalidateSettings error: ${err.message}`);
         }
     }
 
@@ -495,7 +495,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getTrafficStats: ${err.message}`);
+            logger.error(`[Cache] getTrafficStats error: ${err.message}`);
             return null;
         }
     }
@@ -510,7 +510,7 @@ class CacheService {
             await this.redis.setex(PREFIX.TRAFFIC_STATS, this.ttl.TRAFFIC_STATS, JSON.stringify(stats));
             logger.debug('[Cache] SET traffic stats');
         } catch (err) {
-            logger.error(`[Cache] Ошибка setTrafficStats: ${err.message}`);
+            logger.error(`[Cache] setTrafficStats error: ${err.message}`);
         }
     }
 
@@ -524,7 +524,7 @@ class CacheService {
             await this.redis.del(PREFIX.TRAFFIC_STATS);
             logger.debug('[Cache] INVALIDATE traffic stats');
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateTrafficStats: ${err.message}`);
+            logger.error(`[Cache] invalidateTrafficStats error: ${err.message}`);
         }
     }
 
@@ -544,7 +544,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getGroups: ${err.message}`);
+            logger.error(`[Cache] getGroups error: ${err.message}`);
             return null;
         }
     }
@@ -559,7 +559,7 @@ class CacheService {
             await this.redis.setex(PREFIX.GROUPS, this.ttl.GROUPS, JSON.stringify(groups));
             logger.debug('[Cache] SET groups');
         } catch (err) {
-            logger.error(`[Cache] Ошибка setGroups: ${err.message}`);
+            logger.error(`[Cache] setGroups error: ${err.message}`);
         }
     }
 
@@ -573,7 +573,7 @@ class CacheService {
             await this.redis.del(PREFIX.GROUPS);
             logger.debug('[Cache] INVALIDATE groups');
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateGroups: ${err.message}`);
+            logger.error(`[Cache] invalidateGroups error: ${err.message}`);
         }
     }
 
@@ -593,7 +593,7 @@ class CacheService {
             }
             return null;
         } catch (err) {
-            logger.error(`[Cache] Ошибка getDashboardCounts: ${err.message}`);
+            logger.error(`[Cache] getDashboardCounts error: ${err.message}`);
             return null;
         }
     }
@@ -608,7 +608,7 @@ class CacheService {
             await this.redis.setex(PREFIX.DASHBOARD_COUNTS, this.ttl.DASHBOARD_COUNTS, JSON.stringify(counts));
             logger.debug('[Cache] SET dashboard counts');
         } catch (err) {
-            logger.error(`[Cache] Ошибка setDashboardCounts: ${err.message}`);
+            logger.error(`[Cache] setDashboardCounts error: ${err.message}`);
         }
     }
 
@@ -622,7 +622,7 @@ class CacheService {
             await this.redis.del(PREFIX.DASHBOARD_COUNTS);
             logger.debug('[Cache] INVALIDATE dashboard counts');
         } catch (err) {
-            logger.error(`[Cache] Ошибка invalidateDashboardCounts: ${err.message}`);
+            logger.error(`[Cache] invalidateDashboardCounts error: ${err.message}`);
         }
     }
 

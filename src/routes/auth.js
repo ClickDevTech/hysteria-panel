@@ -90,7 +90,7 @@ async function checkDeviceLimit(userId, clientIP, maxDevices) {
         
         return { allowed: true, activeCount };
     } catch (err) {
-        logger.error(`[Auth] Ошибка проверки устройств: ${err.message}`);
+        logger.error(`[Auth] Device check error: ${err.message}`);
         // В случае ошибки — разрешаем (fail open)
         return { allowed: true, activeCount: 0 };
     }
@@ -138,7 +138,7 @@ router.post('/', async (req, res) => {
         const { addr, auth, tx } = req.body;
         
         if (!auth) {
-            logger.warn(`[Auth] Пустой auth от ${addr}`);
+            logger.warn(`[Auth] Empty auth from ${addr}`);
             return res.json({ ok: false });
         }
         
@@ -156,13 +156,13 @@ router.post('/', async (req, res) => {
         const user = await getUserWithCache(userId);
         
         if (!user) {
-            logger.warn(`[Auth] Пользователь не найден: ${userId} (${addr})`);
+            logger.warn(`[Auth] User not found: ${userId} (${addr})`);
             return res.json({ ok: false });
         }
         
         // Проверяем что подписка активна
         if (!user.enabled) {
-            logger.warn(`[Auth] Подписка неактивна: ${userId} (${addr})`);
+            logger.warn(`[Auth] Subscription inactive: ${userId} (${addr})`);
             return res.json({ ok: false });
         }
         
@@ -170,7 +170,7 @@ router.post('/', async (req, res) => {
         if (password) {
             const expectedPassword = cryptoService.generatePassword(userId);
             if (password !== expectedPassword && password !== user.password) {
-                logger.warn(`[Auth] Неверный пароль: ${userId} (${addr})`);
+                logger.warn(`[Auth] Invalid password: ${userId} (${addr})`);
                 return res.json({ ok: false });
             }
         }
@@ -179,14 +179,14 @@ router.post('/', async (req, res) => {
         if (user.trafficLimit > 0) {
             const usedTraffic = (user.traffic?.tx || 0) + (user.traffic?.rx || 0);
             if (usedTraffic >= user.trafficLimit) {
-                logger.warn(`[Auth] Превышен лимит трафика: ${userId} (${addr})`);
+                logger.warn(`[Auth] Traffic limit exceeded: ${userId} (${addr})`);
                 return res.json({ ok: false });
             }
         }
         
         // Проверяем дату истечения
         if (user.expireAt && new Date(user.expireAt) < new Date()) {
-            logger.warn(`[Auth] Подписка истекла: ${userId} (${addr})`);
+            logger.warn(`[Auth] Subscription expired: ${userId} (${addr})`);
             return res.json({ ok: false });
         }
         
@@ -212,12 +212,12 @@ router.post('/', async (req, res) => {
             const { allowed, activeCount } = await checkDeviceLimit(userId, clientIP, maxDevices);
             
             if (!allowed) {
-                logger.warn(`[Auth] Превышен лимит устройств (${activeCount}/${maxDevices} IP): ${userId} (${addr})`);
+                logger.warn(`[Auth] Device limit exceeded (${activeCount}/${maxDevices} IP): ${userId} (${addr})`);
                 return res.json({ ok: false });
             }
         }
         
-        logger.debug(`[Auth] ✅ Авторизован: ${userId} (${addr})`);
+        logger.debug(`[Auth] ✅ Authorized: ${userId} (${addr})`);
         
         // Успешная авторизация
         // Bandwidth ограничивается на стороне КЛИЕНТА (в подписке)
@@ -228,7 +228,7 @@ router.post('/', async (req, res) => {
         });
         
     } catch (error) {
-        logger.error(`[Auth] Ошибка: ${error.message}`);
+        logger.error(`[Auth] Error: ${error.message}`);
         // В случае ошибки — запрещаем (безопаснее)
         return res.json({ ok: false });
     }

@@ -36,7 +36,7 @@ class SyncService {
      * Обновляет конфиг на конкретной ноде
      */
     async updateNodeConfig(node) {
-        logger.info(`[Sync] Обновление конфига ноды ${node.name} (${node.ip})`);
+        logger.info(`[Sync] Updating config for node ${node.name} (${node.ip})`);
         
         await HyNode.updateOne(
             { _id: node._id },
@@ -54,16 +54,16 @@ class SyncService {
             if (node.useCustomConfig && customConfig && customConfig.length > 50) {
                 // Базовая валидация: должен содержать listen и auth/tls/acme
                 if (!customConfig.includes('listen:')) {
-                    throw new Error('Кастомный конфиг невалиден: отсутствует listen:');
+                    throw new Error('Custom config invalid: missing listen:');
                 }
                 if (!customConfig.includes('acme:') && !customConfig.includes('tls:')) {
-                    throw new Error('Кастомный конфиг невалиден: отсутствует acme: или tls:');
+                    throw new Error('Custom config invalid: missing acme: or tls:');
                 }
                 configContent = customConfig;
-                logger.info(`[Sync] Используется кастомный конфиг для ${node.name}`);
+                logger.info(`[Sync] Using custom config for ${node.name}`);
             } else {
                 if (node.useCustomConfig) {
-                    logger.warn(`[Sync] Кастомный конфиг для ${node.name} пуст или слишком короткий, используется автогенерация`);
+                    logger.warn(`[Sync] Custom config for ${node.name} is empty or too short, using auto-generation`);
                 }
             const authUrl = this.getAuthUrl();
                 configContent = configGenerator.generateNodeConfig(node, authUrl);
@@ -86,13 +86,13 @@ class SyncService {
                     }
                 );
                 
-                logger.info(`[Sync] ✅ Нода ${node.name}: конфиг обновлён`);
+                logger.info(`[Sync] ✅ Node ${node.name}: config updated`);
                 return true;
             } else {
-                throw new Error('Не удалось обновить конфиг');
+                throw new Error('Failed to update config');
             }
         } catch (error) {
-            logger.error(`[Sync] ❌ Ошибка ноды ${node.name}: ${error.message}`);
+            logger.error(`[Sync] ❌ Node ${node.name} error: ${error.message}`);
             await HyNode.updateOne(
                 { _id: node._id },
                 { $set: { status: 'error', lastError: error.message } }
@@ -108,12 +108,12 @@ class SyncService {
      */
     async syncAllNodes() {
         if (this.isSyncing) {
-            logger.warn('[Sync] Синхронизация уже запущена');
+            logger.warn('[Sync] Sync already in progress');
             return;
         }
         
         this.isSyncing = true;
-        logger.info('[Sync] Запуск синхронизации всех нод');
+        logger.info('[Sync] Starting sync for all nodes');
         
         try {
             const nodes = await HyNode.find({ active: true });
@@ -128,7 +128,7 @@ class SyncService {
             }
             
             this.lastSyncTime = new Date();
-            logger.info('[Sync] Синхронизация завершена');
+            logger.info('[Sync] Sync completed');
         } finally {
             this.isSyncing = false;
         }
@@ -197,9 +197,9 @@ class SyncService {
                 }
             );
             
-            logger.info(`[Stats] ${node.name}: ${Object.keys(stats).length} пользователей, трафик: ↑${(nodeTx / 1024 / 1024).toFixed(1)}MB ↓${(nodeRx / 1024 / 1024).toFixed(1)}MB`);
+            logger.info(`[Stats] ${node.name}: ${Object.keys(stats).length} users, traffic: ↑${(nodeTx / 1024 / 1024).toFixed(1)}MB ↓${(nodeRx / 1024 / 1024).toFixed(1)}MB`);
         } catch (error) {
-            logger.error(`[Stats] Ошибка ${node.name}: ${error.message}`);
+            logger.error(`[Stats] ${node.name} error: ${error.message}`);
         }
     }
 
@@ -229,7 +229,7 @@ class SyncService {
             );
             
             if (online > 0) {
-                logger.info(`[Stats] ${node.name}: ${online} онлайн`);
+                logger.info(`[Stats] ${node.name}: ${online} online`);
             }
             return online;
         } catch (error) {
@@ -270,9 +270,9 @@ class SyncService {
                     timeout: 5000,
                 });
                 
-                logger.info(`[Kick] ${userId} кикнут с ${node.name}`);
+                logger.info(`[Kick] ${userId} kicked from ${node.name}`);
             } catch (error) {
-                logger.error(`[Kick] Ошибка кика с ${node.name}: ${error.message}`);
+                logger.error(`[Kick] Kick error on ${node.name}: ${error.message}`);
             }
         }
     }
@@ -329,7 +329,7 @@ class SyncService {
             await ssh.setupPortHopping(node.portRange);
             return true;
         } catch (error) {
-            logger.error(`[PortHop] Ошибка на ${node.name}: ${error.message}`);
+            logger.error(`[PortHop] Error on ${node.name}: ${error.message}`);
             return false;
         } finally {
             ssh.disconnect();

@@ -32,17 +32,17 @@ class NodeSSH {
             } else if (this.node.ssh?.password) {
                 config.password = cryptoService.decrypt(this.node.ssh.password);
             } else {
-                reject(new Error('SSH: не указан ни ключ, ни пароль'));
+                reject(new Error('SSH: no key or password provided'));
                 return;
             }
             
             this.client
                 .on('ready', () => {
-                    logger.info(`[SSH] Подключено к ${this.node.name} (${this.node.ip})`);
+                    logger.info(`[SSH] Connected to ${this.node.name} (${this.node.ip})`);
                     resolve();
                 })
                 .on('error', (err) => {
-                    logger.error(`[SSH] Ошибка подключения к ${this.node.name}: ${err.message}`);
+                    logger.error(`[SSH] Connection error to ${this.node.name}: ${err.message}`);
                     reject(err);
                 })
                 .connect(config);
@@ -65,7 +65,7 @@ class NodeSSH {
     async exec(command) {
         return new Promise((resolve, reject) => {
             if (!this.client) {
-                reject(new Error('SSH не подключен'));
+                reject(new Error('SSH not connected'));
                 return;
             }
             
@@ -98,7 +98,7 @@ class NodeSSH {
     async writeFile(remotePath, content) {
         return new Promise((resolve, reject) => {
             if (!this.client) {
-                reject(new Error('SSH не подключен'));
+                reject(new Error('SSH not connected'));
                 return;
             }
             
@@ -112,7 +112,7 @@ class NodeSSH {
                 
                 writeStream
                     .on('close', () => {
-                        logger.info(`[SSH] Записан файл ${remotePath} на ${this.node.name}`);
+                        logger.info(`[SSH] Written file ${remotePath} to ${this.node.name}`);
                         resolve();
                     })
                     .on('error', (err) => {
@@ -131,7 +131,7 @@ class NodeSSH {
     async readFile(remotePath) {
         return new Promise((resolve, reject) => {
             if (!this.client) {
-                reject(new Error('SSH не подключен'));
+                reject(new Error('SSH not connected'));
                 return;
             }
             
@@ -187,14 +187,14 @@ class NodeSSH {
             let result = await this.exec('systemctl restart hysteria-server 2>/dev/null || systemctl restart hysteria 2>/dev/null');
             
             if (result.code !== 0) {
-                logger.error(`[SSH] Ошибка перезапуска Hysteria на ${this.node.name}: ${result.stderr}`);
+                logger.error(`[SSH] Hysteria restart error on ${this.node.name}: ${result.stderr}`);
                 return false;
             }
             
-            logger.info(`[SSH] Hysteria перезапущен на ${this.node.name}`);
+            logger.info(`[SSH] Hysteria restarted on ${this.node.name}`);
             return true;
         } catch (error) {
-            logger.error(`[SSH] Ошибка перезапуска: ${error.message}`);
+            logger.error(`[SSH] Restart error: ${error.message}`);
             return false;
         }
     }
@@ -217,16 +217,16 @@ class NodeSSH {
             const isActive = statusResult.stdout.trim() === 'active';
             
             if (isActive) {
-                logger.info(`[SSH] Hysteria перезапущен и работает на ${this.node.name}`);
+                logger.info(`[SSH] Hysteria restarted and running on ${this.node.name}`);
             return true;
             } else {
-                // Попробуем получить логи для диагностики
+                // Try to get logs for diagnostics
                 const logsResult = await this.exec('journalctl -u hysteria-server -n 10 --no-pager 2>/dev/null || journalctl -u hysteria -n 10 --no-pager 2>/dev/null');
-                logger.error(`[SSH] Hysteria не запустился на ${this.node.name}. Логи: ${logsResult.stdout}`);
+                logger.error(`[SSH] Hysteria failed to start on ${this.node.name}. Logs: ${logsResult.stdout}`);
                 return false;
             }
         } catch (error) {
-            logger.error(`[SSH] Ошибка restart: ${error.message}`);
+            logger.error(`[SSH] Restart error: ${error.message}`);
             return false;
         }
     }
@@ -247,9 +247,9 @@ class NodeSSH {
             // Проверяем синтаксис конфига
             const checkResult = await this.exec(`/usr/local/bin/hysteria check -c ${configPath} 2>&1 || true`);
             
-            // Если проверка не прошла - откатываем
+            // If check failed - rollback
             if (checkResult.stdout.includes('error') || checkResult.stderr.includes('error')) {
-                logger.error(`[SSH] Ошибка в конфиге ${this.node.name}: ${checkResult.stdout}`);
+                logger.error(`[SSH] Config error on ${this.node.name}: ${checkResult.stdout}`);
                 await this.exec(`mv ${configPath}.bak ${configPath}`);
                 return false;
             }
@@ -257,7 +257,7 @@ class NodeSSH {
             // Применяем конфиг
             return await this.reloadHysteria();
         } catch (error) {
-            logger.error(`[SSH] Ошибка обновления конфига: ${error.message}`);
+            logger.error(`[SSH] Config update error: ${error.message}`);
             return false;
         }
     }
@@ -306,10 +306,10 @@ echo "Port hopping: ${startPort}-${endPort} -> ${mainPort}"
             
             await this.exec(script);
             
-            logger.info(`[SSH] Port hopping настроен на ${this.node.name}: ${portRange} -> ${mainPort}`);
+            logger.info(`[SSH] Port hopping configured on ${this.node.name}: ${portRange} -> ${mainPort}`);
             return true;
         } catch (error) {
-            logger.error(`[SSH] Ошибка настройки port hopping: ${error.message}`);
+            logger.error(`[SSH] Port hopping setup error: ${error.message}`);
             return false;
         }
     }
@@ -366,7 +366,7 @@ echo "Port hopping: ${startPort}-${endPort} -> ${mainPort}"
                 tx: txSpeed,  // байт/сек (upload)
             };
         } catch (error) {
-            logger.error(`[SSH] Ошибка получения скорости сети ${this.node.name}: ${error.message}`);
+            logger.error(`[SSH] Network speed error on ${this.node.name}: ${error.message}`);
             return { success: false, error: error.message };
         }
     }
@@ -452,7 +452,7 @@ cat /proc/uptime | cut -d' ' -f1
             
             return { success: true, cpu, mem, disk, uptime };
         } catch (error) {
-            logger.error(`[SSH] Ошибка получения статистики ${this.node.name}: ${error.message}`);
+            logger.error(`[SSH] System stats error on ${this.node.name}: ${error.message}`);
             return { success: false, error: error.message };
         }
     }
