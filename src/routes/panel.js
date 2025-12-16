@@ -1031,6 +1031,29 @@ router.post('/settings/reset-traffic', requireAuth, async (req, res) => {
     }
 });
 
+// POST /panel/settings/reset-stats - Сброс статистики
+router.post('/settings/reset-stats', requireAuth, async (req, res) => {
+    try {
+        const StatsSnapshot = require('../models/statsSnapshotModel');
+        const result = await StatsSnapshot.deleteMany({});
+        
+        logger.warn(`[Panel] Stats reset: ${result.deletedCount} snapshots deleted by admin: ${req.session.adminUsername}`);
+        
+        // Инвалидируем кэш статистики
+        const statsService = require('../services/statsService');
+        await statsService.invalidateCache();
+        
+        res.json({ 
+            success: true, 
+            count: result.deletedCount,
+            message: `Удалено ${result.deletedCount} записей статистики`
+        });
+    } catch (error) {
+        logger.error('[Panel] Stats reset error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // POST /panel/settings/flush-cache - Flush all Redis cache
 router.post('/settings/flush-cache', requireAuth, async (req, res) => {
     try {

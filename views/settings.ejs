@@ -226,6 +226,16 @@ ACME_EMAIL=admin@example.com</pre>
                 <h2><%= t('settings.dangerZone') %></h2>
             </div>
             <div class="card-body">
+                <h4 style="margin-bottom: 0.5rem;"><%= t('settings.resetStats') || 'Сброс статистики' %></h4>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 1rem;">
+                    <%= t('settings.resetStatsDesc') || 'Удалить все исторические данные статистики (графики онлайна, трафика, нод).' %>
+                </p>
+                <button class="btn btn-warning btn-sm" onclick="resetStats()">
+                    <%= t('settings.resetStatsBtn') || 'Очистить статистику' %>
+                </button>
+                
+                <hr style="margin: 1.5rem 0; border-color: var(--border);">
+                
                 <h4 style="margin-bottom: 0.5rem;"><%= t('settings.resetTrafficCounter') %></h4>
                 <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 1rem;">
                     <%= t('settings.resetTrafficDesc') %>
@@ -251,8 +261,44 @@ const i18n = {
     flushCacheConfirm: <%- JSON.stringify(t("settings.flushCacheConfirm")) %>,
     flushing: <%- JSON.stringify(t("settings.flushing")) %>,
     flushCacheBtn: <%- JSON.stringify(t("settings.flushCacheBtn")) %>,
-    cacheFlushed: <%- JSON.stringify(t("settings.cacheFlushed")) %>
+    cacheFlushed: <%- JSON.stringify(t("settings.cacheFlushed")) %>,
+    resetStatsConfirm: <%- JSON.stringify(t("settings.resetStatsConfirm") || "Удалить всю историю статистики?") %>,
+    resetStatsBtn: <%- JSON.stringify(t("settings.resetStatsBtn") || "Очистить статистику") %>,
+    statsReset: <%- JSON.stringify(t("settings.statsReset") || "Статистика очищена ({count} записей)") %>
 };
+
+async function resetStats() {
+    if (!confirm(i18n.resetStatsConfirm)) {
+        return;
+    }
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = i18n.resetting;
+    
+    try {
+        const res = await fetch('/panel/settings/reset-stats', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast(i18n.statsReset.replace('{count}', data.count), 'success');
+            btn.disabled = false;
+            btn.textContent = i18n.resetStatsBtn;
+        } else {
+            showToast(i18n.error + ': ' + (data.error || 'unknown'), 'error');
+            btn.disabled = false;
+            btn.textContent = i18n.resetStatsBtn;
+        }
+    } catch (e) {
+        showToast(i18n.error, 'error');
+        btn.disabled = false;
+        btn.textContent = i18n.resetStatsBtn;
+    }
+}
 
 async function flushCache() {
     if (!confirm(i18n.flushCacheConfirm)) {
