@@ -1,0 +1,631 @@
+<!-- Stats Hint -->
+<div class="hint mb-1" style="color: var(--text-muted); font-size: 13px;">
+    💡 <%= t('stats.hint') || 'Данные обновляются каждые 5 минут. Выберите период для просмотра истории.' %>
+</div>
+
+<!-- Stats Summary -->
+<div class="stats-grid stats-summary-grid">
+    <div class="stat-card stat-online-now">
+        <div class="stat-header">
+            <span class="stat-icon">🌐</span>
+            <span class="stat-trend" id="onlineTrend">—</span>
+        </div>
+        <div class="stat-value" id="currentOnline"><%= summary.current.online %></div>
+        <div class="stat-label"><%= t('stats.onlineNow') %></div>
+    </div>
+    
+    <div class="stat-card stat-peak">
+        <div class="stat-header">
+            <span class="stat-icon">📈</span>
+            <span class="stat-trend"><%= t('stats.last24h') %></span>
+        </div>
+        <div class="stat-value"><%= summary.peak24h %></div>
+        <div class="stat-label"><%= t('stats.peakOnline') %></div>
+    </div>
+    
+    <div class="stat-card stat-traffic-24h">
+        <div class="stat-header">
+            <span class="stat-icon">📊</span>
+            <span class="stat-trend"><%= t('stats.last24h') %></span>
+        </div>
+        <% 
+        const traffic24hGB = (summary.traffic24h.total) / (1024 * 1024 * 1024);
+        const formatTraffic = (bytes) => {
+            const gb = bytes / (1024 * 1024 * 1024);
+            if (gb >= 1000) return (gb / 1024).toFixed(2) + ' TB';
+            if (gb >= 1) return gb.toFixed(1) + ' GB';
+            return (bytes / (1024 * 1024)).toFixed(0) + ' MB';
+        };
+        %>
+        <div class="stat-value"><%= formatTraffic(summary.traffic24h.total) %></div>
+        <div class="stat-label">↑ <%= formatTraffic(summary.traffic24h.tx) %> / ↓ <%= formatTraffic(summary.traffic24h.rx) %></div>
+    </div>
+    
+    <div class="stat-card stat-nodes">
+        <div class="stat-header">
+            <span class="stat-icon">🖥️</span>
+            <span class="stat-trend"><%= t('stats.active') %></span>
+        </div>
+        <div class="stat-value"><%= summary.current.nodesOnline %><span class="stat-small">/<%= summary.current.nodesTotal %></span></div>
+        <div class="stat-label"><%= t('stats.nodesOnline') %></div>
+    </div>
+</div>
+
+<!-- Period Selector -->
+<div class="period-selector">
+    <button class="period-btn active" data-period="1h">1<%= t('stats.h') %></button>
+    <button class="period-btn" data-period="6h">6<%= t('stats.h') %></button>
+    <button class="period-btn" data-period="24h">24<%= t('stats.h') %></button>
+    <button class="period-btn" data-period="7d">7<%= t('stats.d') %></button>
+    <button class="period-btn" data-period="30d">30<%= t('stats.d') %></button>
+</div>
+
+<!-- Charts Grid -->
+<div class="charts-grid">
+    <!-- Online Users Chart -->
+    <div class="card chart-card">
+        <div class="card-header">
+            <h2>🌐 <%= t('stats.onlineConnections') %></h2>
+            <div class="chart-legend" id="onlineLegend"></div>
+        </div>
+        <div class="card-body chart-body">
+            <canvas id="onlineChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Traffic Chart -->
+    <div class="card chart-card">
+        <div class="card-header">
+            <h2>📊 <%= t('stats.traffic') %></h2>
+            <div class="traffic-totals" id="trafficTotals"></div>
+        </div>
+        <div class="card-body chart-body">
+            <canvas id="trafficChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Nodes Chart -->
+<div class="card chart-card chart-card-wide mt-2">
+    <div class="card-header">
+        <h2>🖥️ <%= t('stats.nodesUsage') %></h2>
+        <div class="header-actions">
+            <select id="nodeSelector" class="filter-select">
+                <option value="all"><%= t('stats.allNodes') %></option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body chart-body chart-body-tall">
+        <canvas id="nodesChart"></canvas>
+    </div>
+</div>
+
+<!-- Nodes Table -->
+<div class="card mt-2">
+    <div class="card-header">
+        <h2>📋 <%= t('stats.nodesStats') %></h2>
+    </div>
+    <div class="card-body no-padding">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th><%= t('stats.node') %></th>
+                        <th><%= t('stats.currentOnline') %></th>
+                        <th><%= t('stats.avgOnline') %></th>
+                        <th><%= t('stats.peakOnline') %></th>
+                        <th><%= t('common.status') %></th>
+                    </tr>
+                </thead>
+                <tbody id="nodesTableBody">
+                    <tr><td colspan="5" class="text-center text-muted"><%= t('common.loading') %></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<style>
+.stats-summary-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-small {
+    font-size: 0.5em;
+    color: var(--text-muted);
+}
+
+.period-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--bg-secondary);
+    padding: 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    width: fit-content;
+}
+
+.period-btn {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.period-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.period-btn.active {
+    background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.chart-card {
+    overflow: visible;
+}
+
+.chart-card-wide {
+    grid-column: 1 / -1;
+}
+
+.chart-body {
+    height: 300px;
+    position: relative;
+}
+
+.chart-body-tall {
+    height: 400px;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.traffic-totals {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.traffic-totals .up {
+    color: #22c55e;
+}
+
+.traffic-totals .down {
+    color: #3b82f6;
+}
+
+#nodesTableBody .node-name {
+    font-weight: 600;
+}
+
+#nodesTableBody .value-highlight {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .stats-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .period-selector {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .period-btn {
+        flex: 1;
+        min-width: 50px;
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .chart-body {
+        height: 250px;
+    }
+    
+    .chart-body-tall {
+        height: 300px;
+    }
+    
+    .traffic-totals {
+        flex-direction: column;
+        gap: 4px;
+        font-size: 11px;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script>
+// i18n
+const i18n = {
+    online: <%- JSON.stringify(t('stats.online')) %>,
+    nodesOnline: <%- JSON.stringify(t('stats.nodesOnline')) %>,
+    upload: <%- JSON.stringify(t('stats.upload')) %>,
+    download: <%- JSON.stringify(t('stats.download')) %>,
+    connections: <%- JSON.stringify(t('common.connections')) %>,
+    noData: <%- JSON.stringify(t('stats.noData')) %>,
+    hourChange: <%- JSON.stringify(t('stats.hourChange')) %>,
+};
+
+// Charts instances
+let onlineChart = null;
+let trafficChart = null;
+let nodesChart = null;
+
+// Current period
+let currentPeriod = '1h';
+
+// Chart colors
+const colors = {
+    online: { bg: 'rgba(99, 102, 241, 0.2)', border: '#6366f1' },
+    nodes: { bg: 'rgba(34, 197, 94, 0.2)', border: '#22c55e' },
+    upload: { bg: 'rgba(34, 197, 94, 0.3)', border: '#22c55e' },
+    download: { bg: 'rgba(59, 130, 246, 0.3)', border: '#3b82f6' },
+    nodeColors: [
+        '#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6',
+        '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'
+    ]
+};
+
+// Chart defaults
+Chart.defaults.color = '#a1a1aa';
+Chart.defaults.borderColor = '#27272a';
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    loadData(currentPeriod);
+    
+    // Period selector
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPeriod = btn.dataset.period;
+            loadData(currentPeriod);
+        });
+    });
+    
+    // Auto-refresh every minute
+    setInterval(() => loadData(currentPeriod), 60000);
+});
+
+function initCharts() {
+    // Online Chart
+    const onlineCtx = document.getElementById('onlineChart').getContext('2d');
+    onlineChart = new Chart(onlineCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: i18n.online,
+                data: [],
+                borderColor: colors.online.border,
+                backgroundColor: colors.online.bg,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: getChartOptions('online')
+    });
+    
+    // Traffic Chart
+    const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+    trafficChart = new Chart(trafficCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: i18n.upload,
+                    data: [],
+                    backgroundColor: colors.upload.bg,
+                    borderColor: colors.upload.border,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                },
+                {
+                    label: i18n.download,
+                    data: [],
+                    backgroundColor: colors.download.bg,
+                    borderColor: colors.download.border,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }
+            ]
+        },
+        options: getChartOptions('traffic')
+    });
+    
+    // Nodes Chart
+    const nodesCtx = document.getElementById('nodesChart').getContext('2d');
+    nodesChart = new Chart(nodesCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: getChartOptions('nodes')
+    });
+}
+
+function getChartOptions(type) {
+    const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        plugins: {
+            legend: {
+                display: type === 'nodes',
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 20,
+                }
+            },
+            tooltip: {
+                backgroundColor: '#1f1f23',
+                titleColor: '#fafafa',
+                bodyColor: '#a1a1aa',
+                borderColor: '#27272a',
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true,
+                callbacks: {}
+            }
+        },
+        scales: {
+            x: {
+                type: 'time',
+                time: {
+                    displayFormats: {
+                        minute: 'HH:mm',
+                        hour: 'HH:mm',
+                        day: 'dd MMM'
+                    }
+                },
+                grid: {
+                    display: false,
+                },
+                ticks: {
+                    maxTicksLimit: 10,
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: '#27272a',
+                },
+            }
+        }
+    };
+    
+    if (type === 'traffic') {
+        baseOptions.plugins.tooltip.callbacks.label = function(context) {
+            const value = context.raw;
+            return context.dataset.label + ': ' + formatBytes(value);
+        };
+        baseOptions.scales.y.ticks = {
+            callback: function(value) {
+                return formatBytes(value);
+            }
+        };
+    }
+    
+    return baseOptions;
+}
+
+async function loadData(period) {
+    try {
+        const [onlineData, trafficData, nodesData] = await Promise.all([
+            fetch(`/panel/stats/api/online?period=${period}`, { credentials: 'include' }).then(r => r.json()),
+            fetch(`/panel/stats/api/traffic?period=${period}`, { credentials: 'include' }).then(r => r.json()),
+            fetch(`/panel/stats/api/nodes?period=${period}`, { credentials: 'include' }).then(r => r.json()),
+        ]);
+        
+        updateOnlineChart(onlineData);
+        updateTrafficChart(trafficData);
+        updateNodesChart(nodesData);
+        updateNodesTable(nodesData);
+        updateTrend();
+        
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+        showToast('Error loading stats', 'error');
+    }
+}
+
+function updateOnlineChart(data) {
+    if (!data.labels || data.labels.length === 0) {
+        return;
+    }
+    
+    onlineChart.data.labels = data.labels.map(l => new Date(l));
+    onlineChart.data.datasets[0].data = data.datasets.online;
+    onlineChart.update('none');
+    
+    // Update legend
+    const latest = data.datasets.online[data.datasets.online.length - 1] || 0;
+    const max = Math.max(...data.datasets.online);
+    document.getElementById('onlineLegend').innerHTML = `
+        <span class="legend-item">
+            <span class="legend-dot" style="background: ${colors.online.border}"></span>
+            ${i18n.online}: ${latest}
+        </span>
+        <span class="legend-item" style="color: var(--text-muted)">
+            Max: ${max}
+        </span>
+    `;
+}
+
+function updateTrafficChart(data) {
+    if (!data.labels || data.labels.length === 0) {
+        return;
+    }
+    
+    trafficChart.data.labels = data.labels.map(l => new Date(l));
+    trafficChart.data.datasets[0].data = data.datasets.tx;
+    trafficChart.data.datasets[1].data = data.datasets.rx;
+    trafficChart.update('none');
+    
+    // Update totals
+    document.getElementById('trafficTotals').innerHTML = `
+        <span class="up">↑ ${formatBytes(data.totals.tx)}</span>
+        <span class="down">↓ ${formatBytes(data.totals.rx)}</span>
+    `;
+}
+
+function updateNodesChart(data) {
+    if (!data.labels || data.labels.length === 0 || !data.nodes) {
+        return;
+    }
+    
+    nodesChart.data.labels = data.labels.map(l => new Date(l));
+    
+    // Create datasets for each node
+    nodesChart.data.datasets = data.nodes.map((node, i) => ({
+        label: node.name,
+        data: node.data.map(d => d.online),
+        borderColor: colors.nodeColors[i % colors.nodeColors.length],
+        backgroundColor: 'transparent',
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+    }));
+    
+    nodesChart.update('none');
+    
+    // Update node selector
+    const selector = document.getElementById('nodeSelector');
+    selector.innerHTML = `<option value="all">${i18n.connections}</option>`;
+    data.nodes.forEach((node, i) => {
+        selector.innerHTML += `<option value="${i}">${node.name}</option>`;
+    });
+}
+
+function updateNodesTable(data) {
+    const tbody = document.getElementById('nodesTableBody');
+    
+    if (!data.nodes || data.nodes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">${i18n.noData}</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = data.nodes.map(node => {
+        const onlineValues = node.data.map(d => d.online);
+        const current = onlineValues[onlineValues.length - 1] || 0;
+        const avg = Math.round(onlineValues.reduce((a, b) => a + b, 0) / onlineValues.length);
+        const peak = Math.max(...onlineValues);
+        const lastStatus = node.data[node.data.length - 1]?.status || 'offline';
+        
+        return `
+            <tr>
+                <td class="node-name">${node.name}</td>
+                <td class="value-highlight">${current}</td>
+                <td>${avg}</td>
+                <td>${peak}</td>
+                <td>
+                    <span class="status-indicator status-${lastStatus}">
+                        <span class="status-dot"></span>
+                        ${lastStatus}
+                    </span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function updateTrend() {
+    try {
+        const res = await fetch('/panel/stats/api/summary', { credentials: 'include' });
+        const data = await res.json();
+        
+        const trend = data.trends?.hourly || 0;
+        const trendEl = document.getElementById('onlineTrend');
+        
+        if (trend > 0) {
+            trendEl.innerHTML = `<span style="color: var(--success)">↑ ${trend}%</span>`;
+        } else if (trend < 0) {
+            trendEl.innerHTML = `<span style="color: var(--danger)">↓ ${Math.abs(trend)}%</span>`;
+        } else {
+            trendEl.textContent = '—';
+        }
+        
+        document.getElementById('currentOnline').textContent = data.current?.online || 0;
+        
+    } catch (e) {
+        console.error('Failed to update trend:', e);
+    }
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast show ' + type;
+    setTimeout(() => toast.className = 'toast', 3000);
+}
+</script>
+

@@ -21,6 +21,7 @@ const { i18nMiddleware } = require('./src/middleware/i18n');
 const { countRequest } = require('./src/middleware/rpsCounter');
 const syncService = require('./src/services/syncService');
 const cacheService = require('./src/services/cacheService');
+const statsService = require('./src/services/statsService');
 
 const usersRoutes = require('./src/routes/users');
 const nodesRoutes = require('./src/routes/nodes');
@@ -471,11 +472,27 @@ function setupCronJobs() {
     cron.schedule('*/5 * * * *', async () => {
         logger.debug('[Cron] Collecting stats');
         await syncService.collectAllStats();
+        
+        // Save stats snapshot for charts
+        await statsService.saveHourlySnapshot();
     });
     
     // Health check every minute
     cron.schedule('* * * * *', async () => {
         await syncService.healthCheck();
+    });
+    
+    // Save daily snapshot every hour
+    cron.schedule('0 * * * *', async () => {
+        logger.debug('[Cron] Saving daily stats snapshot');
+        await statsService.saveDailySnapshot();
+    });
+    
+    // Save monthly snapshot and cleanup at 00:05
+    cron.schedule('5 0 * * *', async () => {
+        logger.info('[Cron] Saving monthly stats snapshot');
+        await statsService.saveMonthlySnapshot();
+        await statsService.cleanup();
     });
     
     // Clean old logs daily at 3:00
@@ -484,10 +501,14 @@ function setupCronJobs() {
         cleanOldLogs(30);
     });
     
-    // Initial health check after 5 seconds
+    // Initial health check and stats snapshot after 5 seconds
     setTimeout(async () => {
         logger.info('[Startup] Checking nodes status');
         await syncService.healthCheck();
+        
+        // Initial stats snapshot
+        await statsService.saveHourlySnapshot();
+        logger.info('[Startup] Initial stats snapshot saved');
     }, 5000);
 }
 

@@ -48,6 +48,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "stats": "Statistics",
     "nodes": "Nodes",
     "users": "Users",
     "groups": "Groups",
@@ -416,5 +417,29 @@
     "mb": "MB",
     "gb": "GB",
     "tb": "TB"
+  },
+  "stats": {
+    "title": "Statistics",
+    "onlineNow": "Online Now",
+    "peakOnline": "Peak Online",
+    "last24h": "last 24h",
+    "nodesOnline": "nodes online",
+    "active": "active",
+    "onlineConnections": "Online Connections",
+    "traffic": "Traffic",
+    "nodesUsage": "Nodes Usage",
+    "nodesStats": "Nodes Statistics",
+    "allNodes": "All Nodes",
+    "node": "Node",
+    "currentOnline": "Current",
+    "avgOnline": "Average",
+    "online": "Online",
+    "upload": "Upload",
+    "download": "Download",
+    "noData": "No data",
+    "hourChange": "hour change",
+    "h": "h",
+    "d": "d",
+    "hint": "💡 Data updates every 5 minutes. Select a period to view history."
   }
 }

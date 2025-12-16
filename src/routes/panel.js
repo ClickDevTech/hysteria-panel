@@ -41,6 +41,7 @@ const execAsync = promisify(exec);
 const ejs = require('ejs');
 const os = require('os');
 const rpsCounter = require('../middleware/rpsCounter');
+const statsService = require('../services/statsService');
 
 // Кэш скомпилированных шаблонов (для production)
 const templateCache = new Map();
@@ -1311,6 +1312,76 @@ router.get('/nodes/:id/terminal', requireAuth, async (req, res) => {
         res.render('terminal', { node });
     } catch (error) {
         res.status(500).send('Error: ' + error.message);
+    }
+});
+
+// ==================== STATS ====================
+
+// GET /panel/stats - Страница статистики
+router.get('/stats', requireAuth, async (req, res) => {
+    try {
+        const summary = await statsService.getSummary();
+        
+        render(res, 'stats', {
+            title: 'Статистика',
+            page: 'stats',
+            summary,
+        });
+    } catch (error) {
+        res.status(500).send('Error: ' + error.message);
+    }
+});
+
+// GET /panel/stats/api/summary - Сводная статистика
+router.get('/stats/api/summary', requireAuth, async (req, res) => {
+    try {
+        const summary = await statsService.getSummary();
+        res.json(summary);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /panel/stats/api/online - Данные для графика онлайна
+router.get('/stats/api/online', requireAuth, async (req, res) => {
+    try {
+        const period = req.query.period || '24h';
+        const data = await statsService.getOnlineChart(period);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /panel/stats/api/traffic - Данные для графика трафика
+router.get('/stats/api/traffic', requireAuth, async (req, res) => {
+    try {
+        const period = req.query.period || '24h';
+        const data = await statsService.getTrafficChart(period);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /panel/stats/api/nodes - Данные для графика нод
+router.get('/stats/api/nodes', requireAuth, async (req, res) => {
+    try {
+        const period = req.query.period || '24h';
+        const data = await statsService.getNodesChart(period);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /panel/stats/cleanup - Очистка старых данных (ручной запуск)
+router.post('/stats/cleanup', requireAuth, async (req, res) => {
+    try {
+        const result = await statsService.cleanup();
+        res.json({ success: true, ...result });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 

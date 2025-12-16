@@ -44,6 +44,10 @@
                     <span class="nav-icon">📊</span>
                     <span><%= t('nav.dashboard') %></span>
                 </a></li>
+                <li><a href="/panel/stats" class="<%= page === 'stats' ? 'active' : '' %>">
+                    <span class="nav-icon">📈</span>
+                    <span><%= t('nav.stats') %></span>
+                </a></li>
                 <li><a href="/panel/nodes" class="<%= page === 'nodes' ? 'active' : '' %>">
                     <span class="nav-icon">🖥️</span>
                     <span><%= t('nav.nodes') %></span>
