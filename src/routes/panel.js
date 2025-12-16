@@ -529,7 +529,7 @@ router.get('/nodes/:id/stats', requireAuth, async (req, res) => {
         const ssh = new NodeSSH(node);
         await ssh.connect();
         const stats = await ssh.getSystemStats();
-        ssh.disconnect();
+        // Don't disconnect - pool manages connections
         
         res.json(stats);
     } catch (error) {
@@ -553,7 +553,7 @@ router.get('/nodes/:id/speed', requireAuth, async (req, res) => {
         const ssh = new NodeSSH(node);
         await ssh.connect();
         const speed = await ssh.getNetworkSpeed();
-        ssh.disconnect();
+        // Don't disconnect - pool manages connections
         
         res.json(speed);
     } catch (error) {
@@ -928,22 +928,32 @@ router.post('/settings', requireAuth, async (req, res) => {
         const updates = {
             'loadBalancing.enabled': req.body['loadBalancing.enabled'] === 'on',
             'loadBalancing.hideOverloaded': req.body['loadBalancing.hideOverloaded'] === 'on',
-            // Лимит устройств
+            // Device limit
             'deviceGracePeriod': parseInt(req.body['deviceGracePeriod']) || 15,
-            // TTL кэша
+            // Cache TTL
             'cache.subscriptionTTL': parseInt(req.body['cache.subscriptionTTL']) || 3600,
             'cache.userTTL': parseInt(req.body['cache.userTTL']) || 900,
             'cache.onlineSessionsTTL': parseInt(req.body['cache.onlineSessionsTTL']) || 10,
             'cache.activeNodesTTL': parseInt(req.body['cache.activeNodesTTL']) || 30,
             // Rate limits
             'rateLimit.subscriptionPerMinute': parseInt(req.body['rateLimit.subscriptionPerMinute']) || 100,
+            // SSH Pool
+            'sshPool.enabled': req.body['sshPool.enabled'] === 'on',
+            'sshPool.maxIdleTime': parseInt(req.body['sshPool.maxIdleTime']) || 120,
+            'sshPool.connectTimeout': parseInt(req.body['sshPool.connectTimeout']) || 15,
+            'sshPool.keepAliveInterval': parseInt(req.body['sshPool.keepAliveInterval']) || 30,
+            'sshPool.maxRetries': parseInt(req.body['sshPool.maxRetries']) || 2,
         };
         
         await Settings.update(updates);
         
-        // Сбрасываем кэш настроек и перезагружаем в память
+        // Invalidate settings cache and reload
         await invalidateSettingsCache();
         await reloadSettings();
+        
+        // Reload SSH pool settings
+        const sshPool = require('../services/sshPoolService');
+        await sshPool.reloadSettings();
         
         logger.info(`[Panel] Settings updated`);
         

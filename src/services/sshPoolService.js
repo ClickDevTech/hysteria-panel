@@ -15,18 +15,21 @@ const logger = require('../utils/logger');
 const cryptoService = require('./cryptoService');
 
 class SSHPool {
-    constructor(options = {}) {
+    constructor() {
         // Connection pool: nodeId -> { client, meta }
         this.connections = new Map();
         
-        // Settings
+        // Default settings (will be updated from DB)
         this.config = {
-            maxIdleTime: options.maxIdleTime || 2 * 60 * 1000,      // 2 min idle → close
-            keepAliveInterval: options.keepAliveInterval || 30000,  // keepalive every 30 sec
-            connectTimeout: options.connectTimeout || 15000,        // connection timeout
-            maxRetries: options.maxRetries || 2,                    // reconnect attempts
-            cleanupInterval: options.cleanupInterval || 30000,      // idle check every 30 sec
+            enabled: true,
+            maxIdleTime: 2 * 60 * 1000,      // 2 min idle → close
+            keepAliveInterval: 30000,         // keepalive every 30 sec
+            connectTimeout: 15000,            // connection timeout
+            maxRetries: 2,                    // reconnect attempts
+            cleanupInterval: 30000,           // idle check every 30 sec
         };
+        
+        this.settingsLoaded = false;
         
         // Cleanup timer
         this.cleanupTimer = setInterval(() => this.cleanup(), this.config.cleanupInterval);
@@ -40,11 +43,52 @@ class SSHPool {
     }
     
     /**
+     * Load settings from database
+     */
+    async loadSettings() {
+        try {
+            const Settings = require('../models/settingsModel');
+            const settings = await Settings.get();
+            
+            if (settings?.sshPool) {
+                this.config.enabled = settings.sshPool.enabled !== false;
+                this.config.maxIdleTime = (settings.sshPool.maxIdleTime || 120) * 1000;
+                this.config.keepAliveInterval = (settings.sshPool.keepAliveInterval || 30) * 1000;
+                this.config.connectTimeout = (settings.sshPool.connectTimeout || 15) * 1000;
+                this.config.maxRetries = settings.sshPool.maxRetries || 2;
+                
+                logger.info(`[SSHPool] Settings loaded: enabled=${this.config.enabled}, idle=${settings.sshPool.maxIdleTime}s`);
+            }
+            
+            this.settingsLoaded = true;
+        } catch (error) {
+            logger.warn(`[SSHPool] Failed to load settings: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Check if pool is enabled
+     */
+    isEnabled() {
+        return this.config.enabled;
+    }
+    
+    /**
      * Get or create connection
      * @param {Object} node - node object with ssh credentials
      * @returns {Client} - SSH client
      */
     async getConnection(node) {
+        // Load settings on first request
+        if (!this.settingsLoaded) {
+            await this.loadSettings();
+        }
+        
+        // If pool disabled, throw to trigger direct connection
+        if (!this.config.enabled) {
+            throw new Error('SSH Pool disabled');
+        }
+        
         const nodeId = node._id?.toString() || node.id;
         
         // Check existing connection
@@ -347,19 +391,27 @@ class SSHPool {
         }
         
         return {
+            enabled: this.config.enabled,
             total: this.connections.size,
-            config: this.config,
+            config: {
+                maxIdleTimeSec: this.config.maxIdleTime / 1000,
+                keepAliveIntervalSec: this.config.keepAliveInterval / 1000,
+                connectTimeoutSec: this.config.connectTimeout / 1000,
+                maxRetries: this.config.maxRetries,
+            },
             connections,
         };
     }
+    
+    /**
+     * Reload settings from database
+     */
+    async reloadSettings() {
+        this.settingsLoaded = false;
+        await this.loadSettings();
+    }
 }
 
-// Singleton with optimal settings
-module.exports = new SSHPool({
-    maxIdleTime: 2 * 60 * 1000,       // 2 min idle
-    keepAliveInterval: 30 * 1000,     // keepalive every 30 sec  
-    connectTimeout: 15 * 1000,        // 15 sec timeout
-    maxRetries: 2,                    // 2 retries
-    cleanupInterval: 30 * 1000,       // cleanup every 30 sec
-});
+// Singleton (settings loaded from DB on first use)
+module.exports = new SSHPool();
 

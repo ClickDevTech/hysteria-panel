@@ -411,65 +411,57 @@ async function loadSystemStats() {
 }
 
 async function loadNodesStats() {
-    // Desktop rows
-    const nodeRows = document.querySelectorAll('.node-row');
-    
-    for (const row of nodeRows) {
-        const nodeId = row.dataset.nodeid;
-        const loadCell = row.querySelector('.node-load');
-        
-        try {
-            const res = await fetch(`/panel/nodes/${nodeId}/stats`, { credentials: 'include' });
-            const data = await res.json();
+    const renderStats = (data, desktopEl, mobileEl) => {
+        if (data.success) {
+            const cpuPercent = Math.min(Math.round((data.cpu.load1 / data.cpu.cores) * 100), 100);
+            const memPercent = data.mem.percent;
             
-            if (data.success) {
-                const cpuPercent = Math.min(Math.round((data.cpu.load1 / data.cpu.cores) * 100), 100);
-                const memPercent = data.mem.percent;
-                
-                let cpuColor = 'var(--text-primary)';
-                if (cpuPercent >= 80) cpuColor = '#ef4444';
-                else if (cpuPercent >= 60) cpuColor = '#f59e0b';
-                
-                loadCell.innerHTML = `
+            let cpuColor = 'var(--text-primary)';
+            if (cpuPercent >= 80) cpuColor = '#ef4444';
+            else if (cpuPercent >= 60) cpuColor = '#f59e0b';
+            
+            if (desktopEl) {
+                desktopEl.innerHTML = `
                     <span class="cpu" style="color: ${cpuColor}">CPU: ${cpuPercent}%</span>
                     <span class="mem">RAM: ${memPercent}%</span>
                 `;
-            } else {
-                loadCell.innerHTML = '<span class="load-placeholder">N/A</span>';
             }
-        } catch (e) {
-            loadCell.innerHTML = '<span class="load-placeholder">—</span>';
+            if (mobileEl) {
+                mobileEl.innerHTML = `<span style="color: ${cpuColor}">${cpuPercent}%</span> / ${memPercent}%`;
+            }
+        } else {
+            if (desktopEl) desktopEl.innerHTML = '<span class="load-placeholder">N/A</span>';
+            if (mobileEl) mobileEl.textContent = 'N/A';
         }
-    }
+    };
     
-    // Mobile cards
-    const mobileCards = document.querySelectorAll('.node-load-mobile');
+    // Collect unique nodeIds with their elements
+    const nodesMap = new Map();
     
-    for (const card of mobileCards) {
+    document.querySelectorAll('.node-row').forEach(row => {
+        const nodeId = row.dataset.nodeid;
+        if (!nodesMap.has(nodeId)) nodesMap.set(nodeId, { desktop: null, mobile: null });
+        nodesMap.get(nodeId).desktop = row.querySelector('.node-load');
+    });
+    
+    document.querySelectorAll('.node-load-mobile').forEach(card => {
         const nodeId = card.dataset.nodeid;
-        
-        try {
-            const res = await fetch(`/panel/nodes/${nodeId}/stats`, { credentials: 'include' });
-            const data = await res.json();
-            
-            if (data.success) {
-                const cpuPercent = Math.min(Math.round((data.cpu.load1 / data.cpu.cores) * 100), 100);
-                const memPercent = data.mem.percent;
-                
-                let cpuColor = 'var(--text-primary)';
-                if (cpuPercent >= 80) cpuColor = '#ef4444';
-                else if (cpuPercent >= 60) cpuColor = '#f59e0b';
-                
-                card.querySelector('.mobile-stat-value').innerHTML = `
-                    <span style="color: ${cpuColor}">${cpuPercent}%</span> / ${memPercent}%
-                `;
-            } else {
-                card.querySelector('.mobile-stat-value').textContent = 'N/A';
-            }
-        } catch (e) {
-            card.querySelector('.mobile-stat-value').textContent = '—';
-        }
-    }
+        if (!nodesMap.has(nodeId)) nodesMap.set(nodeId, { desktop: null, mobile: null });
+        nodesMap.get(nodeId).mobile = card.querySelector('.mobile-stat-value');
+    });
+    
+    // One request per node, parallel execution
+    const tasks = Array.from(nodesMap.entries()).map(([nodeId, elements]) => 
+        fetch(`/panel/nodes/${nodeId}/stats`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => renderStats(data, elements.desktop, elements.mobile))
+            .catch(() => {
+                if (elements.desktop) elements.desktop.innerHTML = '<span class="load-placeholder">—</span>';
+                if (elements.mobile) elements.mobile.textContent = '—';
+            })
+    );
+    
+    await Promise.all(tasks);
 }
 
 async function loadNodesSpeed() {
@@ -481,63 +473,60 @@ async function loadNodesSpeed() {
         return `${(bits / 1000 / 1000 / 1000).toFixed(2)} Gbit/s`;
     };
     
-    // Desktop rows
-    const nodeRows = document.querySelectorAll('.node-row');
-    
-    for (const row of nodeRows) {
-        const nodeId = row.dataset.nodeid;
-        const speedCell = row.querySelector('.node-speed');
-        
-        speedCell.innerHTML = '<span class="load-placeholder">⏳</span>';
-        
-        try {
-            const res = await fetch(`/panel/nodes/${nodeId}/speed`, { credentials: 'include' });
-            const data = await res.json();
+    const renderSpeed = (data, desktopEl, mobileEl) => {
+        if (data.success) {
+            const txSpeed = formatSpeed(data.tx);
+            const rxSpeed = formatSpeed(data.rx);
             
-            if (data.success) {
-                const txSpeed = formatSpeed(data.tx);
-                const rxSpeed = formatSpeed(data.rx);
-                
-                speedCell.innerHTML = `
+            if (desktopEl) {
+                desktopEl.innerHTML = `
                     <span class="speed-up" title="Upload">↑ ${txSpeed}</span>
                     <span class="speed-down" title="Download">↓ ${rxSpeed}</span>
                 `;
-            } else {
-                speedCell.innerHTML = '<span class="load-placeholder">N/A</span>';
             }
-        } catch (e) {
-            speedCell.innerHTML = '<span class="load-placeholder">—</span>';
-        }
-    }
-    
-    // Mobile cards
-    const mobileCards = document.querySelectorAll('.node-speed-mobile');
-    
-    for (const card of mobileCards) {
-        const nodeId = card.dataset.nodeid;
-        const valueEl = card.querySelector('.mobile-stat-value');
-        
-        valueEl.textContent = '⏳';
-        
-        try {
-            const res = await fetch(`/panel/nodes/${nodeId}/speed`, { credentials: 'include' });
-            const data = await res.json();
-            
-            if (data.success) {
-                const txSpeed = formatSpeed(data.tx);
-                const rxSpeed = formatSpeed(data.rx);
-                
-                valueEl.innerHTML = `
+            if (mobileEl) {
+                mobileEl.innerHTML = `
                     <span style="color: #22c55e; font-size: 12px;">↑ ${txSpeed}</span><br>
                     <span style="color: #3b82f6; font-size: 12px;">↓ ${rxSpeed}</span>
                 `;
-            } else {
-                valueEl.textContent = 'N/A';
             }
-        } catch (e) {
-            valueEl.textContent = '—';
+        } else {
+            if (desktopEl) desktopEl.innerHTML = '<span class="load-placeholder">N/A</span>';
+            if (mobileEl) mobileEl.textContent = 'N/A';
         }
-    }
+    };
+    
+    // Collect unique nodeIds with their elements
+    const nodesMap = new Map();
+    
+    document.querySelectorAll('.node-row').forEach(row => {
+        const nodeId = row.dataset.nodeid;
+        if (!nodesMap.has(nodeId)) nodesMap.set(nodeId, { desktop: null, mobile: null });
+        const el = row.querySelector('.node-speed');
+        el.innerHTML = '<span class="load-placeholder">⏳</span>';
+        nodesMap.get(nodeId).desktop = el;
+    });
+    
+    document.querySelectorAll('.node-speed-mobile').forEach(card => {
+        const nodeId = card.dataset.nodeid;
+        if (!nodesMap.has(nodeId)) nodesMap.set(nodeId, { desktop: null, mobile: null });
+        const el = card.querySelector('.mobile-stat-value');
+        el.textContent = '⏳';
+        nodesMap.get(nodeId).mobile = el;
+    });
+    
+    // One request per node, parallel execution
+    const tasks = Array.from(nodesMap.entries()).map(([nodeId, elements]) => 
+        fetch(`/panel/nodes/${nodeId}/speed`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => renderSpeed(data, elements.desktop, elements.mobile))
+            .catch(() => {
+                if (elements.desktop) elements.desktop.innerHTML = '<span class="load-placeholder">—</span>';
+                if (elements.mobile) elements.mobile.textContent = '—';
+            })
+    );
+    
+    await Promise.all(tasks);
 }
 
 async function refreshStats() {

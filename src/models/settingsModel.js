@@ -29,6 +29,14 @@ const settingsSchema = new mongoose.Schema({
         authPerSecond: { type: Number, default: 200 },
     },
     
+    sshPool: {
+        enabled: { type: Boolean, default: true },
+        maxIdleTime: { type: Number, default: 120 },        // seconds
+        keepAliveInterval: { type: Number, default: 30 },   // seconds
+        connectTimeout: { type: Number, default: 15 },      // seconds
+        maxRetries: { type: Number, default: 2 },
+    },
+    
 }, { timestamps: true });
 
 settingsSchema.statics.get = async function() {
