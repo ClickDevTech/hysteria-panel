@@ -1,12 +1,12 @@
 /**
  * SSH Connection Pool Service
  * 
- * Оптимизации:
- * - Переиспользование соединений (экономия ~200-500ms на handshake)
- * - Lazy connection (создаётся при первом запросе)
- * - Auto-cleanup idle соединений (освобождение памяти)
- * - Keepalive для поддержания соединений через NAT
- * - Auto-reconnect при обрыве
+ * Optimizations:
+ * - Connection reuse (saves ~200-500ms on handshake)
+ * - Lazy connection (created on first request)
+ * - Auto-cleanup of idle connections (memory release)
+ * - Keepalive to maintain connections through NAT
+ * - Auto-reconnect on disconnect
  * - Graceful shutdown
  */
 
@@ -16,16 +16,16 @@ const cryptoService = require('./cryptoService');
 
 class SSHPool {
     constructor(options = {}) {
-        // Пул соединений: nodeId -> { client, meta }
+        // Connection pool: nodeId -> { client, meta }
         this.connections = new Map();
         
-        // Настройки
+        // Settings
         this.config = {
-            maxIdleTime: options.maxIdleTime || 2 * 60 * 1000,      // 2 мин без активности → закрыть
-            keepAliveInterval: options.keepAliveInterval || 30000,  // keepalive каждые 30 сек
-            connectTimeout: options.connectTimeout || 15000,        // таймаут подключения
-            maxRetries: options.maxRetries || 2,                    // попытки переподключения
-            cleanupInterval: options.cleanupInterval || 30000,      // проверка idle каждые 30 сек
+            maxIdleTime: options.maxIdleTime || 2 * 60 * 1000,      // 2 min idle → close
+            keepAliveInterval: options.keepAliveInterval || 30000,  // keepalive every 30 sec
+            connectTimeout: options.connectTimeout || 15000,        // connection timeout
+            maxRetries: options.maxRetries || 2,                    // reconnect attempts
+            cleanupInterval: options.cleanupInterval || 30000,      // idle check every 30 sec
         };
         
         // Cleanup timer
@@ -40,34 +40,34 @@ class SSHPool {
     }
     
     /**
-     * Получить или создать соединение
-     * @param {Object} node - объект ноды с ssh credentials
+     * Get or create connection
+     * @param {Object} node - node object with ssh credentials
      * @returns {Client} - SSH client
      */
     async getConnection(node) {
         const nodeId = node._id?.toString() || node.id;
         
-        // Проверяем существующее соединение
+        // Check existing connection
         const existing = this.connections.get(nodeId);
         
         if (existing && existing.client._sock?.writable) {
-            // Соединение живо - обновляем lastUsed
+            // Connection alive - update lastUsed
             existing.lastUsed = Date.now();
             existing.useCount++;
             return existing.client;
         }
         
-        // Мёртвое соединение - удаляем
+        // Dead connection - remove
         if (existing) {
             this.removeConnection(nodeId, 'dead');
         }
         
-        // Создаём новое
+        // Create new
         return this.createConnection(node);
     }
     
     /**
-     * Создать новое SSH соединение
+     * Create new SSH connection
      */
     async createConnection(node, retryCount = 0) {
         const nodeId = node._id?.toString() || node.id;
@@ -76,13 +76,13 @@ class SSHPool {
         return new Promise((resolve, reject) => {
             const client = new Client();
             
-            // Таймаут подключения
+            // Connection timeout
             const timeout = setTimeout(() => {
                 client.end();
                 reject(new Error(`Connection timeout (${this.config.connectTimeout}ms)`));
             }, this.config.connectTimeout);
             
-            // Конфигурация SSH
+            // SSH configuration
             const sshConfig = {
                 host: node.ip,
                 port: node.ssh?.port || 22,
@@ -92,7 +92,7 @@ class SSHPool {
                 keepaliveCountMax: 3,
             };
             
-            // Аутентификация
+            // Authentication
             if (node.ssh?.privateKey) {
                 sshConfig.privateKey = node.ssh.privateKey;
             } else if (node.ssh?.password) {
@@ -107,7 +107,7 @@ class SSHPool {
                 .on('ready', () => {
                     clearTimeout(timeout);
                     
-                    // Сохраняем в пул
+                    // Save to pool
                     const meta = {
                         client,
                         nodeId,
@@ -156,7 +156,7 @@ class SSHPool {
     }
     
     /**
-     * Удалить соединение из пула
+     * Remove connection from pool
      */
     removeConnection(nodeId, reason = 'unknown') {
         const conn = this.connections.get(nodeId);
@@ -170,7 +170,7 @@ class SSHPool {
     }
     
     /**
-     * Выполнить команду с auto-reconnect
+     * Execute command with auto-reconnect
      */
     async exec(node, command, options = {}) {
         const client = await this.getConnection(node);
@@ -186,7 +186,7 @@ class SSHPool {
             client.exec(command, (err, stream) => {
                 if (err) {
                     clearTimeout(timer);
-                    // Соединение сломалось - удаляем из пула
+                    // Connection broken - remove from pool
                     this.removeConnection(nodeId, 'exec error');
                     reject(err);
                     return;
@@ -211,7 +211,7 @@ class SSHPool {
     }
     
     /**
-     * Записать файл через SFTP
+     * Write file via SFTP
      */
     async writeFile(node, remotePath, content) {
         const client = await this.getConnection(node);
@@ -243,7 +243,7 @@ class SSHPool {
     }
     
     /**
-     * Прочитать файл через SFTP
+     * Read file via SFTP
      */
     async readFile(node, remotePath) {
         const client = await this.getConnection(node);
@@ -275,7 +275,7 @@ class SSHPool {
     }
     
     /**
-     * Проверить что соединение есть в пуле и живо
+     * Check if connection exists in pool and is alive
      */
     hasConnection(nodeId) {
         const conn = this.connections.get(nodeId?.toString());
@@ -283,14 +283,14 @@ class SSHPool {
     }
     
     /**
-     * Закрыть конкретное соединение
+     * Close specific connection
      */
     async close(nodeId) {
         this.removeConnection(nodeId?.toString(), 'manual');
     }
     
     /**
-     * Cleanup idle соединений
+     * Cleanup idle connections
      */
     cleanup() {
         const now = Date.now();
@@ -311,7 +311,7 @@ class SSHPool {
     }
     
     /**
-     * Закрыть все соединения
+     * Close all connections
      */
     closeAll() {
         logger.info(`[SSHPool] Shutting down (${this.connections.size} connections)`);
@@ -328,7 +328,7 @@ class SSHPool {
     }
     
     /**
-     * Статистика пула
+     * Pool statistics
      */
     getStats() {
         const now = Date.now();
@@ -354,12 +354,12 @@ class SSHPool {
     }
 }
 
-// Singleton с оптимальными настройками
+// Singleton with optimal settings
 module.exports = new SSHPool({
-    maxIdleTime: 2 * 60 * 1000,       // 2 мин без активности
-    keepAliveInterval: 30 * 1000,     // keepalive каждые 30 сек  
-    connectTimeout: 15 * 1000,        // таймаут 15 сек
-    maxRetries: 2,                    // 2 retry
-    cleanupInterval: 30 * 1000,       // cleanup каждые 30 сек
+    maxIdleTime: 2 * 60 * 1000,       // 2 min idle
+    keepAliveInterval: 30 * 1000,     // keepalive every 30 sec  
+    connectTimeout: 15 * 1000,        // 15 sec timeout
+    maxRetries: 2,                    // 2 retries
+    cleanupInterval: 30 * 1000,       // cleanup every 30 sec
 });
 

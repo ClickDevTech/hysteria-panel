@@ -1,8 +1,8 @@
 /**
  * SSH service for Hysteria node management
  * 
- * Использует SSHPool для переиспользования соединений.
- * Падает назад к прямому соединению если пул недоступен.
+ * Uses SSHPool for connection reuse.
+ * Falls back to direct connection if pool unavailable.
  */
 
 const { Client } = require('ssh2');
@@ -13,16 +13,16 @@ const cryptoService = require('./cryptoService');
 class NodeSSH {
     constructor(node) {
         this.node = node;
-        this.usePool = true;  // Использовать пул по умолчанию
-        this.directClient = null;  // Для legacy режима
+        this.usePool = true;  // Use pool by default
+        this.directClient = null;  // For legacy mode
     }
 
     /**
-     * Connect to node via SSH (через пул или напрямую)
+     * Connect to node via SSH (via pool or direct)
      */
     async connect() {
         if (this.usePool) {
-            // Пул сам управляет соединениями - просто проверяем что можем подключиться
+            // Pool manages connections - just verify we can connect
             try {
                 await sshPool.getConnection(this.node);
                 return;
@@ -32,12 +32,12 @@ class NodeSSH {
             }
         }
         
-        // Fallback: прямое соединение
+        // Fallback: direct connection
         return this.connectDirect();
     }
     
     /**
-     * Прямое соединение (legacy, для особых случаев)
+     * Direct connection (legacy, for special cases)
      */
     async connectDirect() {
         return new Promise((resolve, reject) => {
@@ -80,7 +80,7 @@ class NodeSSH {
             this.directClient.end();
             this.directClient = null;
         }
-        // Пул соединения НЕ закрываем - они переиспользуются
+        // Pool connections are NOT closed - they are reused
     }
 
     /**
