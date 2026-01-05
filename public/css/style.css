@@ -525,6 +525,7 @@ html {
 }
 
 .btn-primary:hover {
+    background: linear-gradient(135deg, #818cf8 0%, #8b5cf6 100%);
     box-shadow: 0 6px 20px var(--accent-glow);
     transform: translateY(-2px);
 }
