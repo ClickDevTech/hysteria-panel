@@ -56,90 +56,64 @@
 </style>
 
 <div class="settings-tabs">
-    <button class="settings-tab active" data-tab="general">🏠 <%= t('settings.tabGeneral') || 'Общие' %></button>
-    <button class="settings-tab" data-tab="system">⚙️ <%= t('settings.tabSystem') || 'Система' %></button>
+    <button class="settings-tab active" data-tab="system">⚙️ <%= t('settings.tabSystem') || 'Система' %></button>
     <button class="settings-tab" data-tab="security">🔐 <%= t('settings.tabSecurity') || 'Безопасность' %></button>
     <button class="settings-tab" data-tab="backup">💾 <%= t('settings.tabBackup') || 'Бэкапы' %></button>
     <button class="settings-tab" data-tab="maintenance">🔧 <%= t('settings.tabMaintenance') || 'Обслуживание' %></button>
 </div>
 
-<!-- ==================== TAB: GENERAL ==================== -->
-<div class="tab-content active" id="tab-general">
-    <div class="row">
-        <div class="col-6">
+<!-- ==================== TAB: SYSTEM ==================== -->
+<div class="tab-content active" id="tab-system">
+    <!-- System Info Row -->
+    <div class="row" style="margin-bottom: 1.5rem;">
+        <div class="col-4">
             <div class="card">
-                <div class="card-header">
-                    <h2><%= t('settings.general') %></h2>
-                </div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 1rem;">
                     <div class="settings-list">
                         <div class="setting-item">
                             <label><%= t('settings.baseUrl') %></label>
-                            <code><%= config.BASE_URL %></code>
-                        </div>
-                        <div class="setting-item">
-                            <label><%= t('settings.port') %></label>
-                            <code><%= config.PORT %></code>
+                            <code style="font-size: 11px;"><%= config.BASE_URL %></code>
                         </div>
                         <div class="setting-item">
                             <label><%= t('settings.mongodb') %></label>
-                            <code><%= config.MONGO_URI.replace(/\/\/.*@/, '//***@') %></code>
+                            <code style="font-size: 11px;"><%= config.MONGO_URI.replace(/\/\/.*@/, '//***@').substring(0, 30) %>...</code>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="card mt-2">
-                <div class="card-header">
-                    <h2><%= t('settings.systemStatus') %></h2>
-                </div>
-                <div class="card-body">
+        </div>
+        <div class="col-4">
+            <div class="card">
+                <div class="card-body" style="padding: 1rem;">
                     <div class="settings-list">
                         <div class="setting-item">
                             <label>Uptime</label>
                             <span><%= Math.floor(process.uptime() / 3600) %>h <%= Math.floor((process.uptime() % 3600) / 60) %>m</span>
                         </div>
                         <div class="setting-item">
-                            <label>Memory</label>
-                            <span><%= Math.round(process.memoryUsage().heapUsed / 1024 / 1024) %> MB</span>
-                        </div>
-                        <div class="setting-item">
-                            <label>Node.js</label>
-                            <span><%= process.version %></span>
+                            <label>Memory / Node.js</label>
+                            <span><%= Math.round(process.memoryUsage().heapUsed / 1024 / 1024) %> MB / <%= process.version %></span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-6">
+        <div class="col-4">
             <div class="card">
-                <div class="card-header">
-                    <h2><%= t('settings.sslCertificate') %></h2>
-                </div>
-                <div class="card-body">
+                <div class="card-body" style="padding: 1rem;">
                     <% if (ssl.enabled) { %>
-                    <div class="alert alert-success">
-                        <strong><%= t('settings.httpsActive') %></strong>
-                        <p>Domain: <%= ssl.domain %></p>
-                        <p><%= t('settings.letsEncryptAuto') %></p>
-                    </div>
+                    <div style="color: var(--success); font-weight: 500;">✅ HTTPS</div>
+                    <div style="font-size: 12px; color: var(--text-muted);"><%= ssl.domain %></div>
                     <% } else { %>
-                    <div class="alert alert-warning">
-                        <strong><%= t('settings.httpMode') %></strong>
-                        <p><%= t('settings.httpModeHint') %></p>
-                        <pre>PANEL_DOMAIN=panel.example.com
-ACME_EMAIL=admin@example.com</pre>
-                    </div>
+                    <div style="color: var(--warning); font-weight: 500;">⚠️ HTTP</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">SSL не настроен</div>
                     <% } %>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<!-- ==================== TAB: SYSTEM ==================== -->
-<div class="tab-content" id="tab-system">
+    
+    <!-- System Settings -->
     <div class="card">
         <div class="card-header">
             <h2><%= t('settings.systemSettings') %></h2>

@@ -291,7 +291,6 @@
   },
   "settings": {
     "title": "Settings",
-    "tabGeneral": "General",
     "tabSystem": "System",
     "tabSecurity": "Security",
     "tabBackup": "Backups",

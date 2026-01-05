@@ -291,7 +291,6 @@
   },
   "settings": {
     "title": "Настройки",
-    "tabGeneral": "Общие",
     "tabSystem": "Система",
     "tabSecurity": "Безопасность",
     "tabBackup": "Бэкапы",
