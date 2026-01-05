@@ -320,9 +320,167 @@ async function testS3Connection(s3Config) {
     }
 }
 
+/**
+ * Получить список бэкапов из S3
+ */
+async function listS3Backups(settings) {
+    const client = getS3Client(settings);
+    if (!client) {
+        return [];
+    }
+    
+    try {
+        const { ListObjectsV2Command } = require('@aws-sdk/client-s3');
+        
+        const bucket = settings.backup.s3.bucket;
+        const prefix = settings.backup.s3.prefix || 'backups';
+        
+        const result = await client.send(new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: `${prefix}/hysteria-backup-`,
+        }));
+        
+        if (!result.Contents) {
+            return [];
+        }
+        
+        return result.Contents
+            .filter(obj => obj.Key.endsWith('.tar.gz'))
+            .map(obj => ({
+                name: obj.Key.split('/').pop(),
+                key: obj.Key,
+                size: obj.Size,
+                sizeMB: (obj.Size / 1024 / 1024).toFixed(2),
+                created: obj.LastModified,
+                source: 's3',
+            }))
+            .sort((a, b) => b.created - a.created); // новые первые
+            
+    } catch (error) {
+        logger.error(`[Backup] List S3 backups error: ${error.message}`);
+        return [];
+    }
+}
+
+/**
+ * Скачать бэкап из S3 для восстановления
+ */
+async function downloadFromS3(settings, key) {
+    const client = getS3Client(settings);
+    if (!client) {
+        throw new Error('S3 client not available');
+    }
+    
+    const { GetObjectCommand } = require('@aws-sdk/client-s3');
+    const { Readable } = require('stream');
+    
+    const bucket = settings.backup.s3.bucket;
+    const fileName = key.split('/').pop();
+    const localPath = path.join(__dirname, '../../backups', fileName);
+    
+    logger.info(`[Backup] Downloading from S3: ${key}`);
+    
+    const response = await client.send(new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+    }));
+    
+    // Сохраняем во временный файл
+    const writeStream = fs.createWriteStream(localPath);
+    
+    await new Promise((resolve, reject) => {
+        response.Body.pipe(writeStream);
+        response.Body.on('error', reject);
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+    });
+    
+    logger.info(`[Backup] Downloaded: ${localPath}`);
+    
+    return localPath;
+}
+
+/**
+ * Восстановление из бэкапа (локального или S3)
+ */
+async function restoreBackup(settings, source, identifier) {
+    let archivePath;
+    let tempDownload = false;
+    
+    // Получаем файл
+    if (source === 's3') {
+        archivePath = await downloadFromS3(settings, identifier);
+        tempDownload = true;
+    } else {
+        archivePath = path.join(__dirname, '../../backups', identifier);
+        if (!fs.existsSync(archivePath)) {
+            throw new Error('Backup file not found');
+        }
+    }
+    
+    const extractDir = path.join('/tmp', `restore-${Date.now()}`);
+    
+    try {
+        // Создаём директорию для распаковки
+        fs.mkdirSync(extractDir, { recursive: true });
+        
+        // Распаковываем архив
+        await execAsync(`tar -xzf "${archivePath}" -C "${extractDir}"`);
+        logger.info(`[Restore] Archive extracted to ${extractDir}`);
+        
+        // Ищем папку с дампом
+        const findDumpPath = (dir) => {
+            const items = fs.readdirSync(dir);
+            if (items.includes('hysteria') && fs.statSync(path.join(dir, 'hysteria')).isDirectory()) {
+                return dir;
+            }
+            if (items.length === 1 && fs.statSync(path.join(dir, items[0])).isDirectory()) {
+                return findDumpPath(path.join(dir, items[0]));
+            }
+            return dir;
+        };
+        
+        const dumpPath = findDumpPath(extractDir);
+        const hysteriaDir = path.join(dumpPath, 'hysteria');
+        
+        if (!fs.existsSync(hysteriaDir)) {
+            throw new Error('Invalid backup: hysteria database folder not found');
+        }
+        
+        // Восстанавливаем
+        const mongoUri = config.MONGO_URI;
+        const restoreCmd = `mongorestore --uri="${mongoUri}" --drop --gzip --db=hysteria "${hysteriaDir}"`;
+        
+        logger.info(`[Restore] Starting restore from ${source}: ${identifier}`);
+        await execAsync(restoreCmd);
+        logger.info(`[Restore] Database restored successfully`);
+        
+        // Cleanup
+        await execAsync(`rm -rf "${extractDir}"`);
+        
+        // Удаляем скачанный файл из S3 если это был временный
+        if (tempDownload) {
+            // Оставляем файл - он теперь и локальный бэкап
+        }
+        
+        return { success: true };
+        
+    } catch (error) {
+        // Cleanup при ошибке
+        try {
+            await execAsync(`rm -rf "${extractDir}"`);
+        } catch (e) {}
+        
+        throw error;
+    }
+}
+
 module.exports = {
     createBackup,
     listBackups,
+    listS3Backups,
+    downloadFromS3,
+    restoreBackup,
     shouldRunBackup,
     scheduledBackup,
     testS3Connection,

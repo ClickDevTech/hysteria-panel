@@ -1507,5 +1507,54 @@ router.get('/settings/backups', requireAuth, async (req, res) => {
     }
 });
 
+// GET /panel/settings/backups-s3 - Список бэкапов в S3
+router.get('/settings/backups-s3', requireAuth, async (req, res) => {
+    try {
+        const backupService = require('../services/backupService');
+        const settings = await Settings.get();
+        
+        if (!settings?.backup?.s3?.enabled) {
+            return res.json({ backups: [], error: 'S3 not configured' });
+        }
+        
+        const backups = await backupService.listS3Backups(settings);
+        res.json({ backups });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /panel/settings/restore-backup - Восстановление из бэкапа (локального или S3)
+router.post('/settings/restore-backup', requireAuth, async (req, res) => {
+    try {
+        const backupService = require('../services/backupService');
+        const settings = await Settings.get();
+        const { source, identifier } = req.body;
+        
+        if (!source || !identifier) {
+            return res.status(400).json({ error: 'Source and identifier required' });
+        }
+        
+        if (source !== 'local' && source !== 's3') {
+            return res.status(400).json({ error: 'Invalid source' });
+        }
+        
+        if (source === 's3' && !settings?.backup?.s3?.enabled) {
+            return res.status(400).json({ error: 'S3 not configured' });
+        }
+        
+        logger.info(`[Restore] Starting restore from ${source}: ${identifier}`);
+        
+        await backupService.restoreBackup(settings, source, identifier);
+        
+        logger.info(`[Restore] Completed successfully`);
+        
+        res.json({ success: true, message: 'Database restored successfully' });
+    } catch (error) {
+        logger.error(`[Restore] Error: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
 

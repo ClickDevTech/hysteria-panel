@@ -377,6 +377,18 @@ ACME_EMAIL=admin@example.com</pre>
                         </button>
                     </div>
                 </form>
+                
+                <hr style="margin: 1.5rem 0; border-color: var(--border);">
+                
+                <h4 style="margin-bottom: 0.75rem;">📋 <%= t('settings.backupsList') || 'Доступные бэкапы' %></h4>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="loadBackupsList()" id="refreshBackupsBtn">
+                        🔄 <%= t('common.refresh') %>
+                    </button>
+                </div>
+                <div id="backupsList" style="max-height: 300px; overflow-y: auto;">
+                    <p style="color: var(--text-muted); font-size: 13px;"><%= t('settings.clickRefresh') || 'Нажмите "Обновить" для загрузки списка' %></p>
+                </div>
             </div>
         </div>
         
@@ -446,7 +458,14 @@ const i18n = {
     createBackupNow: <%- JSON.stringify(t("settings.createBackupNow")) %>,
     creatingBackup: <%- JSON.stringify(t("settings.creatingBackup")) %>,
     backupCreated: <%- JSON.stringify(t("settings.backupCreated")) %>,
-    backupError: <%- JSON.stringify(t("settings.backupError")) %>
+    backupError: <%- JSON.stringify(t("settings.backupError")) %>,
+    restoreConfirm: <%- JSON.stringify(t("settings.restoreConfirm") || "Восстановить из этого бэкапа? Текущие данные будут заменены!") %>,
+    restoring: <%- JSON.stringify(t("settings.restoring") || "Восстановление...") %>,
+    restored: <%- JSON.stringify(t("settings.restored") || "✓ База данных восстановлена! Перезагрузка...") %>,
+    restoreError: <%- JSON.stringify(t("settings.restoreError") || "Ошибка восстановления") %>,
+    noBackups: <%- JSON.stringify(t("settings.noBackups") || "Нет доступных бэкапов") %>,
+    localBackups: <%- JSON.stringify(t("settings.localBackups") || "Локальные") %>,
+    s3Backups: <%- JSON.stringify(t("settings.s3Backups") || "S3") %>
 };
 
 // Toggle backup settings visibility
@@ -518,6 +537,8 @@ async function createBackupNow() {
             showToast(i18n.backupCreated.replace('{filename}', data.filename).replace('{size}', data.size), 'success');
             // Update last backup time
             document.getElementById('lastBackupTime').textContent = new Date().toLocaleString();
+            // Reload backups list
+            loadBackupsList();
         } else {
             showToast(i18n.backupError + ': ' + (data.error || 'unknown'), 'error');
         }
@@ -527,6 +548,115 @@ async function createBackupNow() {
     
     btn.disabled = false;
     btn.textContent = i18n.createBackupNow;
+}
+
+// Load backups list (local + S3)
+async function loadBackupsList() {
+    const container = document.getElementById('backupsList');
+    const btn = document.getElementById('refreshBackupsBtn');
+    
+    btn.disabled = true;
+    container.innerHTML = '<p style="color: var(--text-muted);">⏳ Загрузка...</p>';
+    
+    try {
+        // Load local and S3 backups in parallel
+        const [localRes, s3Res] = await Promise.all([
+            fetch('/panel/settings/backups', { credentials: 'include' }),
+            fetch('/panel/settings/backups-s3', { credentials: 'include' })
+        ]);
+        
+        const localData = await localRes.json();
+        const s3Data = await s3Res.json();
+        
+        const localBackups = (localData.backups || []).map(b => ({ ...b, source: 'local' }));
+        const s3Backups = s3Data.backups || [];
+        
+        if (localBackups.length === 0 && s3Backups.length === 0) {
+            container.innerHTML = `<p style="color: var(--text-muted);">${i18n.noBackups}</p>`;
+            btn.disabled = false;
+            return;
+        }
+        
+        let html = '';
+        
+        // Local backups
+        if (localBackups.length > 0) {
+            html += `<div style="margin-bottom: 1rem;"><strong>💾 ${i18n.localBackups} (${localBackups.length})</strong></div>`;
+            html += '<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">';
+            for (const b of localBackups) {
+                const date = new Date(b.created).toLocaleString();
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 4px;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 500;">${b.name}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">${date} • ${b.sizeMB} MB</div>
+                        </div>
+                        <button class="btn btn-warning btn-sm" onclick="restoreBackup('local', '${b.name}')" style="padding: 4px 8px; font-size: 11px;">
+                            ⬇️ Restore
+                        </button>
+                    </div>
+                `;
+            }
+            html += '</div>';
+        }
+        
+        // S3 backups
+        if (s3Backups.length > 0) {
+            html += `<div style="margin-bottom: 1rem;"><strong>☁️ ${i18n.s3Backups} (${s3Backups.length})</strong></div>`;
+            html += '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+            for (const b of s3Backups) {
+                const date = new Date(b.created).toLocaleString();
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 4px;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 500;">${b.name}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">${date} • ${b.sizeMB} MB</div>
+                        </div>
+                        <button class="btn btn-warning btn-sm" onclick="restoreBackup('s3', '${b.key}')" style="padding: 4px 8px; font-size: 11px;">
+                            ⬇️ Restore
+                        </button>
+                    </div>
+                `;
+            }
+            html += '</div>';
+        }
+        
+        container.innerHTML = html;
+        
+    } catch (e) {
+        container.innerHTML = `<p style="color: var(--danger);">Error: ${e.message}</p>`;
+    }
+    
+    btn.disabled = false;
+}
+
+// Restore from backup
+async function restoreBackup(source, identifier) {
+    if (!confirm(i18n.restoreConfirm)) {
+        return;
+    }
+    
+    showToast(i18n.restoring, 'info');
+    
+    try {
+        const res = await fetch('/panel/settings/restore-backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ source, identifier })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast(i18n.restored, 'success');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showToast(i18n.restoreError + ': ' + (data.error || 'unknown'), 'error');
+        }
+    } catch (e) {
+        showToast(i18n.restoreError + ': ' + e.message, 'error');
+    }
 }
 
 async function resetStats() {
