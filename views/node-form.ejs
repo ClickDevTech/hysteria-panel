@@ -40,6 +40,13 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="sni"><%= t('nodes.sni') || 'SNI (Server Name Indication)' %></label>
+                    <input type="text" id="sni" name="sni" value="<%= node?.sni || '' %>" 
+                           placeholder="google.com">
+                    <small><%= t('nodes.sniHint') || 'Custom SNI for client connections (for domain fronting). If empty, domain or IP will be used.' %></small>
+                </div>
+                
+                <div class="form-group">
                 <label><%= t('nodes.groups') %></label>
                 <div class="groups-select">
                     <% if (groups && groups.length > 0) { %>

@@ -6,23 +6,43 @@ const { Client } = require('ssh2');
 const logger = require('../utils/logger');
 const config = require('../../config');
 const cryptoService = require('./cryptoService');
+const Settings = require('../models/settingsModel');
 
 /**
  * Generate Hysteria config for node
+ * 
+ * @param {Object} node - Node configuration
+ * @param {string} authUrl - Auth API URL
+ * @param {Object} options - Additional options
+ * @param {boolean} options.authInsecure - Allow self-signed certs for auth API (default: true)
+ * 
+ * SNI logic:
+ * - If domain is set: ACME certificate, SNI must match domain (sniGuard: dns-san by default)
+ * - If no domain (self-signed): can use custom SNI with sniGuard: disable
  */
-function generateHysteriaConfig(node, authUrl) {
-    const tlsSection = node.domain 
-        ? `# ACME (Let's Encrypt)
+function generateHysteriaConfig(node, authUrl, options = {}) {
+    const { authInsecure = true } = options;
+    
+    let tlsSection;
+    
+    if (node.domain) {
+        // ACME - SNI must match domain, custom SNI won't work here
+        tlsSection = `# ACME (Let's Encrypt)
 acme:
   domains:
     - ${node.domain}
   email: admin@${node.domain}
   dir: /etc/hysteria/acme
-  listenHost: 0.0.0.0`
-        : `# Self-signed certificate
+  listenHost: 0.0.0.0`;
+    } else {
+        // Self-signed certificate
+        // If custom SNI is set, disable sniGuard to allow domain fronting
+        const sniGuardLine = node.sni ? '\n  sniGuard: disable  # Allow custom SNI from clients' : '';
+        tlsSection = `# Self-signed certificate
 tls:
   cert: /etc/hysteria/cert.pem
-  key: /etc/hysteria/key.pem`;
+  key: /etc/hysteria/key.pem${sniGuardLine}`;
+    }
 
     return `# Hysteria 2 Config - Auto-generated
 # Node: ${node.name}
@@ -51,7 +71,7 @@ auth:
   type: http
   http:
     url: ${authUrl}
-    insecure: false
+    insecure: ${authInsecure}  # ${authInsecure ? 'Allow' : 'Reject'} self-signed certs for auth API
 
 ignoreClientBandwidth: false
 
@@ -199,6 +219,11 @@ if [ "$CERT_VALID" = "0" ]; then
         exit 1
     fi
     
+    # Set correct ownership for hysteria user (if exists)
+    if id "hysteria" &>/dev/null; then
+        chown hysteria:hysteria /etc/hysteria/key.pem /etc/hysteria/cert.pem
+        echo "Done: Ownership set to hysteria:hysteria"
+    fi
     chmod 600 /etc/hysteria/key.pem
     chmod 644 /etc/hysteria/cert.pem
     rm -f /tmp/ecparam.pem
@@ -291,8 +316,12 @@ async function setupNode(node, options = {}) {
     
     log(`Starting setup for ${node.name} (${node.ip})`);
     
+    // Get settings for auth insecure option
+    const settings = await Settings.get();
+    const authInsecure = settings?.nodeAuth?.insecure ?? true;
+    
     const authUrl = `${config.BASE_URL}/api/auth`;
-    log(`Auth URL: ${authUrl}`);
+    log(`Auth URL: ${authUrl} (insecure: ${authInsecure})`);
     
     let conn;
     
@@ -362,7 +391,7 @@ echo "Note: Make sure DNS for ${node.domain} points to this server's IP!"
         }
         
         log('Uploading config...');
-        const hysteriaConfig = generateHysteriaConfig(node, authUrl);
+        const hysteriaConfig = generateHysteriaConfig(node, authUrl, { authInsecure });
         await uploadFile(conn, hysteriaConfig, '/etc/hysteria/config.yaml');
         log('Config uploaded to /etc/hysteria/config.yaml');
         logs.push('--- Config content ---');

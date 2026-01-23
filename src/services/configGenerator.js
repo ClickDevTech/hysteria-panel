@@ -6,8 +6,14 @@ const yaml = require('yaml');
 
 /**
  * Generate YAML config for Hysteria 2 node
+ * @param {Object} node - Node configuration
+ * @param {string} authUrl - Auth API URL
+ * @param {Object} options - Additional options
+ * @param {boolean} options.authInsecure - Allow self-signed certs for auth API (default: true)
  */
-function generateNodeConfig(node, authUrl) {
+function generateNodeConfig(node, authUrl, options = {}) {
+    const { authInsecure = true } = options;
+    
     const config = {
         listen: `:${node.port}`,
         
@@ -33,7 +39,7 @@ function generateNodeConfig(node, authUrl) {
             type: 'http',
             http: {
                 url: authUrl,
-                insecure: false,
+                insecure: authInsecure,
             },
         },
         
@@ -56,6 +62,7 @@ function generateNodeConfig(node, authUrl) {
     };
     
     if (node.domain) {
+        // ACME - SNI must match domain (sniGuard: dns-san by default)
         config.acme = {
             domains: [node.domain],
             email: 'acme@' + node.domain,
@@ -63,10 +70,15 @@ function generateNodeConfig(node, authUrl) {
             listenHost: '0.0.0.0',
         };
     } else {
+        // Self-signed certificate
         config.tls = {
             cert: node.paths?.cert || '/etc/hysteria/cert.pem',
             key: node.paths?.key || '/etc/hysteria/key.pem',
         };
+        // If custom SNI is set, disable sniGuard to allow domain fronting
+        if (node.sni) {
+            config.tls.sniGuard = 'disable';
+        }
     }
     
     if (node.statsPort && node.statsSecret) {
@@ -81,8 +93,16 @@ function generateNodeConfig(node, authUrl) {
 
 /**
  * Generate config with ACME (Let's Encrypt)
+ * @param {Object} node - Node configuration
+ * @param {string} authUrl - Auth API URL
+ * @param {string} domain - ACME domain
+ * @param {string} email - ACME email
+ * @param {Object} options - Additional options
+ * @param {boolean} options.authInsecure - Allow self-signed certs for auth API (default: true)
  */
-function generateNodeConfigACME(node, authUrl, domain, email) {
+function generateNodeConfigACME(node, authUrl, domain, email, options = {}) {
+    const { authInsecure = true } = options;
+    
     const config = {
         listen: `:${node.port}`,
         
@@ -113,7 +133,7 @@ function generateNodeConfigACME(node, authUrl, domain, email) {
             type: 'http',
             http: {
                 url: authUrl,
-                insecure: false,
+                insecure: authInsecure,
             },
         },
         

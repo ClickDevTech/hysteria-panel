@@ -76,7 +76,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const {
-            name, ip, domain, port, portRange, statsPort,
+            name, ip, domain, sni, port, portRange, statsPort,
             groups, ssh, paths, settings, rankingCoefficient
         } = req.body;
         
@@ -97,6 +97,7 @@ router.post('/', async (req, res) => {
             name,
             ip,
             domain: domain || '',
+            sni: sni || '',
             port: port || 443,
             portRange: portRange || '20000-50000',
             statsPort: statsPort || 9999,
@@ -130,7 +131,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const allowedUpdates = [
-            'name', 'domain', 'port', 'portRange', 'statsPort',
+            'name', 'domain', 'sni', 'port', 'portRange', 'statsPort',
             'groups', 'ssh', 'paths', 'settings', 'active', 'rankingCoefficient'
         ];
         

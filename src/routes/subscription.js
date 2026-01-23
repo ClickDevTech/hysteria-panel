@@ -23,7 +23,8 @@ function detectFormat(userAgent) {
     // Shadowrocket лучше работает с base64 URI list
     if (/shadowrocket/.test(ua)) return 'shadowrocket';
     if (/clash|stash|surge|loon/.test(ua)) return 'clash';
-    if (/hiddify|sing-?box|sfi|sfa|sfm|sft|karing|hiddifynext/.test(ua)) return 'singbox';
+    // sing-box based clients: Hiddify, NekoBox, SFI/SFA/SFM/SFT, Karing
+    if (/hiddify|sing-?box|nekobox|neko|sfi|sfa|sfm|sft|karing|hiddifynext/.test(ua)) return 'singbox';
     return 'uri';
 }
 
@@ -41,7 +42,7 @@ async function getUserByToken(token) {
             { userId: token }
         ]
     })
-        .populate('nodes', 'active name status onlineUsers maxOnlineUsers rankingCoefficient domain ip port portRange portConfigs flag')
+        .populate('nodes', 'active name status onlineUsers maxOnlineUsers rankingCoefficient domain sni ip port portRange portConfigs flag')
         .populate('groups', '_id name subscriptionTitle');
     
     return user;
@@ -164,6 +165,12 @@ function validateUser(user) {
 function getNodeConfigs(node) {
     const configs = [];
     const host = node.domain || node.ip;
+    // SNI logic:
+    // - If domain is set (ACME): SNI MUST be domain (server's sniGuard will reject other values)
+    // - If no domain (self-signed): can use custom SNI for domain fronting
+    const sni = node.domain ? node.domain : (node.sni || '');
+    // hasCert: true if domain is set (ACME = valid cert)
+    const hasCert = !!node.domain;
     
     if (node.portConfigs && node.portConfigs.length > 0) {
         node.portConfigs.filter(c => c.enabled).forEach(cfg => {
@@ -172,14 +179,15 @@ function getNodeConfigs(node) {
                 host,
                 port: cfg.port,
                 portRange: cfg.portRange || '',
-                domain: node.domain,
+                sni,
+                hasCert,
             });
         });
     } else {
-        configs.push({ name: 'TLS', host, port: 443, portRange: '', domain: node.domain });
+        configs.push({ name: 'TLS', host, port: node.port || 443, portRange: '', sni, hasCert });
         // Порт 80 убран (используется для ACME)
         if (node.portRange) {
-            configs.push({ name: 'Hopping', host, port: node.port || 443, portRange: node.portRange, domain: node.domain });
+            configs.push({ name: 'Hopping', host, port: node.port || 443, portRange: node.portRange, sni, hasCert });
         }
     }
     
@@ -193,9 +201,11 @@ function generateURI(user, node, config) {
     const auth = `${user.userId}:${user.password}`;
     const params = [];
     
-    if (config.domain) params.push(`sni=${config.domain}`);
+    // SNI for TLS handshake (can be custom domain for masquerading)
+    if (config.sni) params.push(`sni=${config.sni}`);
     params.push('alpn=h3');
-    params.push(`insecure=${config.domain ? '0' : '1'}`);
+    // insecure=1 only if no valid certificate (self-signed without domain)
+    params.push(`insecure=${config.hasCert ? '0' : '1'}`);
     if (config.portRange) params.push(`mport=${config.portRange}`);
     
     const name = `${node.flag || ''} ${node.name} ${config.name}`.trim();
@@ -230,8 +240,8 @@ function generateClashYAML(user, nodes) {
     server: ${cfg.host}
     port: ${cfg.port}
     password: "${auth}"
-    sni: ${cfg.domain || cfg.host}
-    skip-cert-verify: ${!cfg.domain}
+    sni: ${cfg.sni || cfg.host}
+    skip-cert-verify: ${!cfg.hasCert}
     alpn:
       - h3`;
             
@@ -258,17 +268,23 @@ function generateSingboxJSON(user, nodes) {
                 type: 'hysteria2',
                 tag,
                 server: cfg.host,
-                server_port: cfg.port,
                 password: auth,
                 tls: {
                     enabled: true,
-                    server_name: cfg.domain || cfg.host,
-                    insecure: !cfg.domain,
+                    server_name: cfg.sni || cfg.host,
+                    insecure: !cfg.hasCert,
                     alpn: ['h3']
                 }
             };
             
-            if (cfg.portRange) outbound.hop_ports = cfg.portRange;
+            // Port hopping: use server_ports (sing-box 1.11+) instead of server_port
+            // Format: "20000-50000" -> ["20000:50000"]
+            if (cfg.portRange) {
+                outbound.server_ports = [cfg.portRange.replace('-', ':')];
+                outbound.hop_interval = '30s';
+            } else {
+                outbound.server_port = cfg.port;
+            }
             
             outbounds.push(outbound);
         });

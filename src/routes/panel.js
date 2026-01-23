@@ -389,6 +389,7 @@ router.post('/nodes', requireAuth, async (req, res) => {
             name: req.body.name,
             ip: req.body.ip,
             domain: req.body.domain || '',
+            sni: req.body.sni || '',
             port: parseInt(req.body.port) || 443,
             portRange: req.body.portRange || '20000-50000',
             statsPort: parseInt(req.body.statsPort) || 9999,
@@ -449,6 +450,7 @@ router.post('/nodes/:id', requireAuth, async (req, res) => {
             name: req.body.name,
             ip: req.body.ip,
             domain: req.body.domain || '',
+            sni: req.body.sni || '',
             port: parseInt(req.body.port) || 443,
             portRange: req.body.portRange || '20000-50000',
             statsPort: parseInt(req.body.statsPort) || 9999,
@@ -943,6 +945,8 @@ router.post('/settings', requireAuth, async (req, res) => {
             'sshPool.connectTimeout': parseInt(req.body['sshPool.connectTimeout']) || 15,
             'sshPool.keepAliveInterval': parseInt(req.body['sshPool.keepAliveInterval']) || 30,
             'sshPool.maxRetries': parseInt(req.body['sshPool.maxRetries']) || 2,
+            // Node Auth
+            'nodeAuth.insecure': req.body['nodeAuth.insecure'] === 'on',
         };
         
         // Backup settings (если форма бэкапов)

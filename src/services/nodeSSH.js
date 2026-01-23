@@ -199,17 +199,45 @@ class NodeSSH {
 
     /**
      * Check Hysteria service status
+     * Performs multiple checks to ensure service is actually running
      */
     async checkHysteriaStatus() {
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Wait for service to stabilize after restart
+            await new Promise(resolve => setTimeout(resolve, 3000));
             
+            // Check 1: systemctl is-active
             const result = await this.exec('systemctl is-active hysteria-server 2>/dev/null || systemctl is-active hysteria 2>/dev/null || echo "unknown"');
             const status = result.stdout.trim();
             
             logger.debug(`[SSH] ${this.node.name} hysteria status: ${status}`);
             
-            return status === 'active';
+            if (status !== 'active') {
+                return false;
+            }
+            
+            // Check 2: Verify service didn't crash immediately after start
+            // Check journal for errors in last 10 seconds
+            const journalCheck = await this.exec(`
+                journalctl -u hysteria-server -u hysteria --since "10 seconds ago" --no-pager 2>/dev/null | grep -iE "(fatal|error|failed|panic)" | head -5
+            `);
+            
+            if (journalCheck.stdout.trim()) {
+                logger.warn(`[SSH] ${this.node.name} has errors in journal: ${journalCheck.stdout.trim()}`);
+                return false;
+            }
+            
+            // Check 3: Verify the process is actually listening on the expected port
+            const port = this.node.port || 443;
+            const portCheck = await this.exec(`ss -ulnp | grep -E ":${port}\\s" | head -1`);
+            
+            if (!portCheck.stdout.trim()) {
+                logger.warn(`[SSH] ${this.node.name} is not listening on port ${port}`);
+                return false;
+            }
+            
+            logger.debug(`[SSH] ${this.node.name} all checks passed, service is healthy`);
+            return true;
         } catch (error) {
             logger.warn(`[SSH] ${this.node.name} status check failed: ${error.message}`);
             return false;

@@ -37,6 +37,12 @@ const settingsSchema = new mongoose.Schema({
         maxRetries: { type: Number, default: 2 },
     },
     
+    nodeAuth: {
+        // Allow nodes to connect to panel auth API with self-signed/invalid SSL
+        // Enable if panel uses HTTP or self-signed certificate
+        insecure: { type: Boolean, default: true },
+    },
+    
     backup: {
         enabled: { type: Boolean, default: false },
         intervalHours: { type: Number, default: 24 },       // интервал в часах

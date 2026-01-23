@@ -16,6 +16,7 @@ const hyNodeSchema = new mongoose.Schema({
     flag: { type: String, default: '' },
     ip: { type: String, required: true, unique: true },
     domain: { type: String, default: '' },
+    sni: { type: String, default: '' }, // Custom SNI for client (if different from domain)
     port: { type: Number, default: 443 },
     portRange: { type: String, default: '20000-50000' },
     portConfigs: { type: [portConfigSchema], default: [] },

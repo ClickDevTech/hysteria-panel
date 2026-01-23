@@ -11,6 +11,7 @@
 
 const HyUser = require('../models/hyUserModel');
 const HyNode = require('../models/hyNodeModel');
+const Settings = require('../models/settingsModel');
 const NodeSSH = require('./nodeSSH');
 const configGenerator = require('./configGenerator');
 const cache = require('./cacheService');
@@ -64,8 +65,10 @@ class SyncService {
                 if (node.useCustomConfig) {
                     logger.warn(`[Sync] Custom config for ${node.name} is empty or too short, using auto-generation`);
                 }
-            const authUrl = this.getAuthUrl();
-                configContent = configGenerator.generateNodeConfig(node, authUrl);
+                const authUrl = this.getAuthUrl();
+                const settings = await Settings.get();
+                const authInsecure = settings?.nodeAuth?.insecure ?? true;
+                configContent = configGenerator.generateNodeConfig(node, authUrl, { authInsecure });
             }
             
             // Update config on node

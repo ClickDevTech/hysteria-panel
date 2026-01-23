@@ -245,6 +245,25 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Node Auth -->
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><%= t('settings.nodeAuth') || 'Node Auth API' %></h2>
+                    </div>
+                    <div class="card-body">
+                        <label class="checkbox-label" style="margin-bottom: 0.75rem;">
+                            <input type="checkbox" name="nodeAuth.insecure" 
+                                   <%= settings?.nodeAuth?.insecure !== false ? 'checked' : '' %>>
+                            <span><%= t('settings.nodeAuthInsecure') || 'Allow self-signed certificates' %></span>
+                        </label>
+                        <p class="hint" style="margin-top: 0.5rem;">
+                            <%= t('settings.nodeAuthInsecureHint') || 'Enable if panel uses HTTP or self-signed SSL. Nodes will accept any certificate when connecting to auth API. Disable for production with valid SSL.' %>
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Save Button -->
